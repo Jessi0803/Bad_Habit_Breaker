@@ -4,6 +4,54 @@
 let interventionActive = false;
 let globalAudioContext = null;
 
+// Simple Chinese translation helper
+function getChineseTranslation(englishMessage, domain) {
+  // Simple keyword-based translation
+  const translations = {
+    'instagram': 'Instagram',
+    'facebook': 'Facebook', 
+    'youtube': 'YouTube',
+    'shopping': '購物網站',
+    'amazon': '亞馬遜',
+    'stop': '停止',
+    'close': '關閉',
+    'page': '頁面',
+    'time': '時間',
+    'wasted': '浪費',
+    'work': '工作',
+    'focus': '專注',
+    'enough': '夠了',
+    'rest': '休息',
+    'sleep': '睡覺',
+    'productivity': '生產力',
+    'distraction': '分心',
+    'surrender': '投降'
+  };
+  
+  // Check for specific patterns
+  if (englishMessage.toLowerCase().includes('sleep') || englishMessage.toLowerCase().includes('rest')) {
+    return '該睡覺了！不要再熬夜刷社群媒體！';
+  }
+  if (englishMessage.toLowerCase().includes('facebook')) {
+    return '別再刷 Facebook 了！該專注工作了！';
+  }
+  if (englishMessage.toLowerCase().includes('instagram')) {
+    return '停止滑 Instagram！你還有更重要的事要做！';
+  }
+  if (englishMessage.toLowerCase().includes('youtube')) {
+    return '別再看 YouTube 了！時間很寶貴！';
+  }
+  if (englishMessage.toLowerCase().includes('surrender') || englishMessage.toLowerCase().includes('churchill')) {
+    return '我們絕不向分心投降！立即關閉此頁面！';
+  }
+  if (englishMessage.toLowerCase().includes('minute')) {
+    return '你已經浪費太多時間了！該停止了！';
+  }
+  
+  // Default fallback
+  return '該專注工作了！不要再浪費時間！';
+}
+
 // 預先初始化 Audio Context (提高自動播放成功率)
 function initAudioContext() {
   try {
@@ -85,23 +133,50 @@ function showIntervention(data) {
   
   const icon = isChurchill ? '🇬🇧' : '🚫';
   const title = isChurchill ? 'Prime Minister Says:' : 'Hold On!';
+  const titleZh = isChurchill ? '首相說：' : '等一下！';
+  
+  // Get Chinese translation
+  const messageZh = getChineseTranslation(data.message, data.domain);
+  
+  // Format today's total time
+  const totalMinutes = Math.floor((data.todayTotalTime || 0) / 60);
+  const totalSeconds = (data.todayTotalTime || 0) % 60;
+  const showTotalTime = data.todayTotalTime && data.todayTotalTime > 0;
   
   overlay.innerHTML = `
     <div class="habit-breaker-modal">
       ${churchillImageHTML}
       <div class="habit-breaker-icon">${icon}</div>
-      <h1 class="habit-breaker-title">${title}</h1>
-      <p class="habit-breaker-message">${escapeHtml(data.message)}</p>
+      <h1 class="habit-breaker-title" style="line-height: 1.4;">
+        <span style="display: block;">${title}</span>
+        <span style="display: block; font-size: 0.75em; opacity: 0.85; margin-top: 8px; font-weight: 500;">${titleZh}</span>
+      </h1>
+      <p class="habit-breaker-message" style="line-height: 1.6;">
+        <span style="display: block; margin-bottom: 8px; font-size: 18px;">${escapeHtml(data.message)}</span>
+        <span style="display: block; font-size: 15px; opacity: 0.85; font-style: italic;">${escapeHtml(messageZh)}</span>
+      </p>
       <div class="habit-breaker-stats">
         <p>You've been on <strong>${escapeHtml(data.domain)}</strong></p>
+        <p style="font-size: 0.85em; opacity: 0.8;">你已經在 <strong>${escapeHtml(data.domain)}</strong> 上</p>
         <p>for <strong>${data.timeSpent} seconds</strong></p>
+        <p style="font-size: 0.85em; opacity: 0.8;">待了 <strong>${data.timeSpent} 秒</strong></p>
+        ${showTotalTime ? `
+        <p style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 16px; font-weight: 600;">
+          📊 Today's total: <strong style="color: #ff6b6b;">${totalMinutes}m ${totalSeconds}s</strong>
+        </p>
+        <p style="font-size: 0.85em; opacity: 0.8;">
+          今日累計：<strong style="color: #ff6b6b;">${totalMinutes} 分 ${totalSeconds} 秒</strong>
+        </p>
+        ` : ''}
       </div>
       <div class="habit-breaker-buttons">
         <button id="habit-breaker-break" class="btn-primary">
-          ✅ Take a Break
+          <div style="font-size: 16px;">✅ Take a Break</div>
+          <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">休息一下</div>
         </button>
         <button id="habit-breaker-continue" class="btn-secondary">
-          ⏭️ Continue Anyway
+          <div style="font-size: 16px;">⏭️ Continue Anyway</div>
+          <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">繼續瀏覽</div>
         </button>
       </div>
     </div>
@@ -110,9 +185,15 @@ function showIntervention(data) {
   document.body.appendChild(overlay);
   
   // Play voice with multiple fallback strategies
-  // Use audioFile from backend if available, otherwise fallback to selection logic
-  const audioFile = data.audioFile || selectAudioFile(data.message, data.domain);
-  playVoiceWithFallback(audioFile, data.message);
+  // Priority: base64 audio > audioFile > fallback
+  if (data.audioBase64) {
+    // Play dynamic generated audio from base64
+    playDynamicVoice(data.audioBase64, data.message);
+  } else {
+    // Use pre-generated audio file
+    const audioFile = data.audioFile || selectAudioFile(data.message, data.domain);
+    playVoiceWithFallback(audioFile, data.message);
+  }
   
   // Add event listeners
   document.getElementById('habit-breaker-break').addEventListener('click', () => {
@@ -127,6 +208,49 @@ function showIntervention(data) {
   
   // Blur the page content
   document.body.classList.add('habit-breaker-blur');
+}
+
+// Play dynamic voice from base64
+function playDynamicVoice(audioBase64, message) {
+  console.log('🎙️ Playing dynamic generated voice');
+  
+  try {
+    // Convert base64 to blob
+    const byteCharacters = atob(audioBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+    const audioUrl = URL.createObjectURL(blob);
+    
+    console.log('🎵 Created blob URL from base64 audio');
+    
+    // Strategy 1: Direct play
+    const audio = new Audio(audioUrl);
+    audio.volume = 0.9;
+    
+    audio.play().then(() => {
+      console.log('✅ Dynamic audio playing successfully');
+    }).catch(err => {
+      console.log('⚠️ Dynamic audio autoplay blocked, trying fallback...');
+      
+      // Strategy 2: Show visual prompt (if needed)
+      // Just try to play on user interaction
+      document.addEventListener('click', () => {
+        audio.play().catch(console.error);
+      }, { once: true });
+    });
+    
+    // Clean up blob URL after playing
+    audio.addEventListener('ended', () => {
+      URL.revokeObjectURL(audioUrl);
+    });
+    
+  } catch (error) {
+    console.error('❌ Failed to play dynamic voice:', error);
+  }
 }
 
 // 多重策略播放語音，嘗試繞過自動播放限制

@@ -33,7 +33,7 @@ app.get('/health', (req, res) => {
  */
 app.post('/api/generate-intervention', async (req, res) => {
   try {
-    const { site, timeSpent, visitCount, currentTime, voiceType } = req.body;
+    const { site, timeSpent, todayTotalTime, visitCount, currentTime, voiceType, useDynamicVoice } = req.body;
     
     if (!site || timeSpent === undefined) {
       return res.status(400).json({ 
@@ -41,14 +41,18 @@ app.post('/api/generate-intervention', async (req, res) => {
       });
     }
     
-    console.log(`📊 Generating intervention for ${site} (${timeSpent}s, visit #${visitCount || 1}, voice: ${voiceType || 'mom'})`);
+    const totalMinutes = Math.floor((todayTotalTime || 0) / 60);
+    const totalSeconds = (todayTotalTime || 0) % 60;
+    
+    console.log(`📊 Generating intervention for ${site} (session: ${timeSpent}s, today total: ${totalMinutes}m ${totalSeconds}s, visit #${visitCount || 1}, voice: ${voiceType || 'mom'})`);
     
     // 使用 Groq LLM 生成個性化訊息
     const result = await generatePersonalizedMessage({
       site,
       timeSpent,
-      voiceType,
+      todayTotalTime: todayTotalTime || 0,  // 🆕 Pass today's total time
       visitCount: visitCount || 1,
+      voiceType,
       currentTime: currentTime || new Date().toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit',
@@ -56,58 +60,110 @@ app.post('/api/generate-intervention', async (req, res) => {
       })
     });
     
-    // 根據語音類型和網站選擇對應的預錄音檔
-    const audioMappings = {
-      churchill: {
-        'instagram': 'churchill_instagram.mp3',
-        'facebook': 'churchill_facebook.mp3',
-        'youtube': 'churchill_youtube.mp3',
-        'shopping': 'churchill_shopping.mp3',
-        'amazon': 'churchill_shopping.mp3',
-        'default': 'churchill_instagram.mp3'
-      },
-      mom: {
-        'instagram': 'mom-instagram-en.mp3',
-        'facebook': 'mom-facebook-en.mp3',
-        'shopping': 'mom-shopping-en.mp3',
-        'amazon': 'mom-shopping-en.mp3',
-        'default': 'mom-instagram-en.mp3'
-      },
-      idol: {
-        'instagram': 'coach-tiktok-en.mp3',  // Use coach voice as placeholder
-        'facebook': 'mom-facebook-en.mp3',
-        'youtube': 'coach-tiktok-en.mp3',
-        'default': 'coach-tiktok-en.mp3'
-      },
-      coach: {
-        'instagram': 'coach-tiktok-en.mp3',
-        'facebook': 'coach-tiktok-en.mp3',
-        'shopping': 'mom-shopping-en.mp3',
-        'amazon': 'mom-shopping-en.mp3',
-        'default': 'coach-tiktok-en.mp3'
-      }
-    };
+    let audioFile = null;
+    let audioBase64 = null;
     
-    // 選擇語音集合
-    const currentVoice = voiceType || 'mom';
-    const audioMapping = audioMappings[currentVoice] || audioMappings.mom;
-    
-    // 找出最匹配的音檔
-    let audioFile = audioMapping.default;
-    for (const [keyword, file] of Object.entries(audioMapping)) {
-      if (keyword !== 'default' && site.toLowerCase().includes(keyword)) {
-        audioFile = file;
-        break;
+    // Option 1: Dynamic voice generation (real-time TTS)
+    if (useDynamicVoice && process.env.ELEVENLABS_API_KEY) {
+      try {
+        console.log('🎙️ Generating dynamic voice with ElevenLabs...');
+        
+        // Voice ID mapping
+        const voiceIds = {
+          churchill: 'JBFqnCBsd6RMkjVDRZzb', // George - British male
+          mom: 'JBFqnCBsd6RMkjVDRZzb',      // George
+          idol: 'JBFqnCBsd6RMkjVDRZzb',     // George
+          coach: 'JBFqnCBsd6RMkjVDRZzb'     // George
+        };
+        
+        const voiceId = voiceIds[voiceType] || voiceIds.mom;
+        
+        const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': process.env.ELEVENLABS_API_KEY
+          },
+          body: JSON.stringify({
+            text: result.message,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: {
+              stability: 0.95,
+              similarity_boost: 0.95,
+              style: 0.2,
+              use_speaker_boost: true
+            }
+          })
+        });
+        
+        if (ttsResponse.ok) {
+          const audioBuffer = await ttsResponse.arrayBuffer();
+          audioBase64 = Buffer.from(audioBuffer).toString('base64');
+          console.log(`✅ Dynamic voice generated (${(audioBuffer.byteLength / 1024).toFixed(2)} KB)`);
+        } else {
+          throw new Error('TTS API failed');
+        }
+      } catch (error) {
+        console.error('⚠️ Dynamic voice failed, falling back to pre-generated:', error.message);
       }
     }
     
+    // Option 2: Pre-generated voice files (fallback)
+    if (!audioBase64) {
+      const audioMappings = {
+        churchill: {
+          'instagram': 'churchill_instagram.mp3',
+          'facebook': 'churchill_facebook.mp3',
+          'youtube': 'churchill_youtube.mp3',
+          'shopping': 'churchill_shopping.mp3',
+          'amazon': 'churchill_shopping.mp3',
+          'default': 'churchill_instagram.mp3'
+        },
+        mom: {
+          'instagram': 'mom-instagram-en.mp3',
+          'facebook': 'mom-facebook-en.mp3',
+          'shopping': 'mom-shopping-en.mp3',
+          'amazon': 'mom-shopping-en.mp3',
+          'default': 'mom-instagram-en.mp3'
+        },
+        idol: {
+          'instagram': 'coach-tiktok-en.mp3',
+          'facebook': 'mom-facebook-en.mp3',
+          'youtube': 'coach-tiktok-en.mp3',
+          'default': 'coach-tiktok-en.mp3'
+        },
+        coach: {
+          'instagram': 'coach-tiktok-en.mp3',
+          'facebook': 'coach-tiktok-en.mp3',
+          'shopping': 'mom-shopping-en.mp3',
+          'amazon': 'mom-shopping-en.mp3',
+          'default': 'coach-tiktok-en.mp3'
+        }
+      };
+      
+      const currentVoice = voiceType || 'mom';
+      const audioMapping = audioMappings[currentVoice] || audioMappings.mom;
+      
+      audioFile = audioMapping.default;
+      for (const [keyword, file] of Object.entries(audioMapping)) {
+        if (keyword !== 'default' && site.toLowerCase().includes(keyword)) {
+          audioFile = file;
+          break;
+        }
+      }
+      
+      console.log(`🎵 Using pre-generated audio: ${audioFile}`);
+    }
+    
     console.log(`✅ Generated message: "${result.message}"`);
-    console.log(`🎵 Audio file: ${audioFile}`);
     
     res.json({
       success: true,
       message: result.message,
       audioFile: audioFile,
+      audioBase64: audioBase64,
+      usedDynamicVoice: !!audioBase64,
       severity: result.severity,
       generatedBy: result.generatedBy
     });
@@ -115,7 +171,6 @@ app.post('/api/generate-intervention', async (req, res) => {
   } catch (error) {
     console.error('❌ Error generating intervention:', error);
     
-    // Fallback 訊息（如果 LLM 失敗）
     res.json({
       success: true,
       message: `Time to stop browsing ${req.body.site}! You have more important things to do!`,

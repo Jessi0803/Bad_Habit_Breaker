@@ -8,6 +8,43 @@ const USE_LLM = true; // Set to false to use fixed messages
 // Visit count tracking (for LLM context)
 const visitCounts = new Map();
 
+// Daily accumulated time tracking per site
+let dailyTimeTracking = {};
+
+// Initialize daily tracking from storage
+chrome.storage.local.get(['dailyTimeTracking', 'trackingDate'], (result) => {
+  const today = new Date().toDateString();
+  
+  if (result.trackingDate === today && result.dailyTimeTracking) {
+    dailyTimeTracking = result.dailyTimeTracking;
+    console.log('📊 Loaded daily tracking:', dailyTimeTracking);
+  } else {
+    dailyTimeTracking = {};
+    chrome.storage.local.set({ dailyTimeTracking: {}, trackingDate: today });
+    console.log('🌅 New day, reset daily tracking');
+  }
+});
+
+// Save accumulated time
+function saveDailyTracking() {
+  chrome.storage.local.set({ 
+    dailyTimeTracking,
+    trackingDate: new Date().toDateString()
+  });
+}
+
+// Get total time spent today (in seconds)
+function getTodayTotalTime(domain) {
+  return dailyTimeTracking[domain] || 0;
+}
+
+// Add time to daily tracking
+function addToDailyTracking(domain, seconds) {
+  dailyTimeTracking[domain] = (dailyTimeTracking[domain] || 0) + seconds;
+  saveDailyTracking();
+  console.log(`⏱️ ${domain}: +${seconds}s (total today: ${Math.floor(dailyTimeTracking[domain] / 60)}m ${dailyTimeTracking[domain] % 60}s)`);
+}
+
 // Sensitivity thresholds
 const SENSITIVITY_MULTIPLIERS = {
   high: 0.5,    // 5-10s
@@ -178,12 +215,20 @@ async function triggerIntervention(tabId, activity) {
     }
     
     const timeSpent = Math.floor((Date.now() - activity.startTime) / 1000);
-    let message, audioFile;
+    
+    // Add current session time to daily tracking
+    addToDailyTracking(activity.domain, timeSpent);
+    
+    // Get today's total time on this site
+    const todayTotalTime = getTodayTotalTime(activity.domain);
+    
+    let message, audioFile, audioBase64;
     
     // 🚀 Use LLM to generate dynamic message
     if (USE_LLM) {
       try {
         console.log(`🧠 Requesting LLM intervention for ${activity.domain}...`);
+        console.log(`📊 Session: ${timeSpent}s | Today total: ${Math.floor(todayTotalTime / 60)}m ${todayTotalTime % 60}s`);
         
         const response = await fetch(`${BACKEND_URL}/api/generate-intervention`, {
           method: 'POST',
@@ -193,13 +238,15 @@ async function triggerIntervention(tabId, activity) {
           body: JSON.stringify({
             site: activity.domain,
             timeSpent: timeSpent,
+            todayTotalTime: todayTotalTime,  // 🆕 Add today's total time
             visitCount: activity.visitCount || 1,
             currentTime: new Date().toLocaleTimeString('en-US', { 
               hour: '2-digit', 
               minute: '2-digit',
               hour12: false 
             }),
-            voiceType: settings.voiceType || 'mom'  // Pass voice personality to LLM
+            voiceType: settings.voiceType || 'mom',  // Pass voice personality to LLM
+            useDynamicVoice: true  // Enable real-time TTS generation
           })
         });
         
@@ -207,8 +254,13 @@ async function triggerIntervention(tabId, activity) {
           const data = await response.json();
           message = data.message;
           audioFile = data.audioFile;
+          audioBase64 = data.audioBase64; // Get base64 audio if available
           console.log(`✅ LLM generated: "${message}"`);
-          console.log(`🎵 Using audio: ${audioFile}`);
+          if (data.usedDynamicVoice) {
+            console.log(`🎙️ Using dynamic voice (${(data.audioBase64?.length / 1024).toFixed(2)} KB)`);
+          } else {
+            console.log(`🎵 Using pre-generated audio: ${audioFile}`);
+          }
         } else {
           throw new Error('Backend response not ok');
         }
@@ -231,9 +283,11 @@ async function triggerIntervention(tabId, activity) {
       action: 'intervene',
       message: message,
       audioFile: audioFile,
+      audioBase64: audioBase64, // Pass base64 audio if available
       voiceType: settings.voiceType,
       domain: activity.domain,
-      timeSpent: timeSpent
+      timeSpent: timeSpent,
+      todayTotalTime: todayTotalTime  // 🆕 Pass today's total time to UI
     });
     
     // Log event

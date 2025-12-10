@@ -19,7 +19,7 @@ const groq = new Groq({
  */
 export async function generatePersonalizedMessage(behaviorData) {
   try {
-    const { site, timeSpent, visitCount, currentTime, voiceType = 'mom' } = behaviorData;
+    const { site, timeSpent, todayTotalTime = 0, visitCount, currentTime, voiceType = 'mom' } = behaviorData;
 
     // Define personality styles
     const personalities = {
@@ -60,9 +60,26 @@ export async function generatePersonalizedMessage(behaviorData) {
 
     const personality = personalities[voiceType] || personalities.mom;
 
-    const prompt = `You are ${personality.style}. A user has been on ${site} for ${timeSpent} seconds (this is their visit #${visitCount} today, current time: ${currentTime}).
+    // Format today's total time for better readability
+    const totalMinutes = Math.floor(todayTotalTime / 60);
+    const totalSeconds = todayTotalTime % 60;
+    const totalTimeFormatted = totalMinutes > 0 
+      ? `${totalMinutes} minute${totalMinutes > 1 ? 's' : ''} ${totalSeconds} second${totalSeconds !== 1 ? 's' : ''}`
+      : `${totalSeconds} second${totalSeconds !== 1 ? 's' : ''}`;
 
-Generate a SHORT (max 20 words), impactful message to snap them out of the distraction. ${voiceType === 'churchill' ? 'Use dramatic, wartime-style rhetoric like Churchill would.' : 'Be direct but caring.'}
+    const prompt = `You are ${personality.style}. 
+
+Context:
+- User is on ${site}
+- Current session: ${timeSpent} seconds
+- TODAY'S TOTAL TIME on ${site}: ${totalTimeFormatted} (${todayTotalTime} seconds total)
+- This is visit #${visitCount} today
+- Current time: ${currentTime}
+
+Generate a SHORT (max 25 words), impactful message to snap them out of the distraction. ${voiceType === 'churchill' ? 'Use dramatic, wartime-style rhetoric like Churchill would.' : 'Be direct but caring.'}
+
+${todayTotalTime > 300 ? '⚠️ IMPORTANT: They\'ve spent over 5 minutes today! Be more strict and mention the total time wasted!' : ''}
+${todayTotalTime > 600 ? '🚨 CRITICAL: They\'ve spent over 10 minutes today! Be VERY strict!' : ''}
 
 Examples of ${voiceType} style:
 ${personality.examples.map(ex => `- "${ex}"`).join('\n')}
@@ -85,18 +102,21 @@ Return ONLY the message, nothing else.`;
 
     const message = chatCompletion.choices[0]?.message?.content?.trim();
 
-    // 根據行為判斷嚴重程度
+    // 根據行為判斷嚴重程度（包含累計時間）
     let severity = "low";
-    if (timeSpent > 120 || visitCount > 3) {
+    if (todayTotalTime > 600 || timeSpent > 120 || visitCount > 5) {
+      // Over 10 minutes today OR long single session OR many visits
       severity = "high";
-    } else if (timeSpent > 60 || visitCount > 1) {
+    } else if (todayTotalTime > 300 || timeSpent > 60 || visitCount > 2) {
+      // Over 5 minutes today OR moderate session OR some visits
       severity = "medium";
     }
 
     return {
-      message: message || `Stop wasting time on ${site}!`,
+      message: message || `Stop wasting time on ${site}! You've already spent ${Math.floor(todayTotalTime / 60)} minutes today!`,
       severity,
-      generatedBy: "groq-llama-3.3-70b"
+      generatedBy: "groq-llama-3.3-70b",
+      todayTotalTime: todayTotalTime  // Return for debugging
     };
 
   } catch (error) {
