@@ -1,5 +1,12 @@
 // Habit Breaker - Background Service Worker
-// Monitors user behavior and triggers interventions
+// Monitors user behavior and triggers interventions with LLM
+
+// Backend API Configuration
+const BACKEND_URL = 'http://localhost:3000';
+const USE_LLM = true; // Set to false to use fixed messages
+
+// Visit count tracking (for LLM context)
+const visitCounts = new Map();
 
 // Configuration
 const BAD_HABITS = [
@@ -75,16 +82,23 @@ function checkAndStartMonitoring(tabId, url) {
     });
     
     if (habit) {
+      // Track visit count for this domain
+      const today = new Date().toDateString();
+      const visitKey = `${domain}_${today}`;
+      const currentCount = visitCounts.get(visitKey) || 0;
+      visitCounts.set(visitKey, currentCount + 1);
+      
       // Start monitoring this tab
       tabActivity.set(tabId, {
         startTime: Date.now(),
         url: url,
         domain: domain,
         habit: habit,
-        alerted: false
+        alerted: false,
+        visitCount: currentCount + 1
       });
       
-      console.log(`Monitoring started for tab ${tabId}: ${domain}`);
+      console.log(`Monitoring started for tab ${tabId}: ${domain} (visit #${currentCount + 1} today)`);
       
       // Set up alarm to check threshold
       chrome.alarms.create(`check_${tabId}`, {
@@ -148,27 +162,75 @@ async function triggerIntervention(tabId, activity) {
       return;
     }
     
-    // Pick a random message
-    const messages = activity.habit.messages;
-    const message = messages[Math.floor(Math.random() * messages.length)];
+    const timeSpent = Math.floor((Date.now() - activity.startTime) / 1000);
+    let message, audioFile;
+    
+    // 🚀 Use LLM to generate dynamic message
+    if (USE_LLM) {
+      try {
+        console.log(`🧠 Requesting LLM intervention for ${activity.domain}...`);
+        
+        const response = await fetch(`${BACKEND_URL}/api/generate-intervention`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            site: activity.domain,
+            timeSpent: timeSpent,
+            visitCount: activity.visitCount || 1,
+            currentTime: new Date().toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: false 
+            })
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          message = data.message;
+          audioFile = data.audioFile;
+          console.log(`✅ LLM generated: "${message}"`);
+          console.log(`🎵 Using audio: ${audioFile}`);
+        } else {
+          throw new Error('Backend response not ok');
+        }
+      } catch (error) {
+        console.error('⚠️ LLM API failed, using fallback:', error);
+        // Fallback to fixed messages
+        const messages = activity.habit.messages;
+        message = messages[Math.floor(Math.random() * messages.length)];
+        audioFile = 'mom-instagram-en.mp3';
+      }
+    } else {
+      // Use fixed messages
+      const messages = activity.habit.messages;
+      message = messages[Math.floor(Math.random() * messages.length)];
+      audioFile = 'mom-instagram-en.mp3';
+    }
     
     // Send message to content script to show overlay and play voice
     chrome.tabs.sendMessage(tabId, {
       action: 'intervene',
       message: message,
+      audioFile: audioFile,
       voiceType: settings.voiceType,
       domain: activity.domain,
-      timeSpent: Math.floor((Date.now() - activity.startTime) / 1000)
+      timeSpent: timeSpent
     });
     
     // Log event
-    console.log(`Intervention triggered for ${activity.domain}: "${message}"`);
+    console.log(`🎯 Intervention triggered for ${activity.domain}: "${message}"`);
     
     // Save to history (for analytics later)
     saveInterventionHistory(activity, message);
     
+    // Log to backend
+    logInterventionToBackend(activity, message, timeSpent);
+    
   } catch (error) {
-    console.error('Error triggering intervention:', error);
+    console.error('❌ Error triggering intervention:', error);
   }
 }
 
@@ -188,6 +250,28 @@ async function saveInterventionHistory(activity, message) {
   }
   
   await chrome.storage.local.set({ interventions: history.interventions });
+}
+
+// Log intervention to backend (for analytics)
+async function logInterventionToBackend(activity, message, timeSpent) {
+  if (!USE_LLM) return;
+  
+  try {
+    await fetch(`${BACKEND_URL}/api/log-intervention`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        domain: activity.domain,
+        timeSpent: timeSpent,
+        message: message,
+        userResponse: 'pending'
+      })
+    });
+  } catch (error) {
+    console.error('Failed to log intervention to backend:', error);
+  }
 }
 
 // Listen for messages from content script

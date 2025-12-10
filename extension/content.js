@@ -90,7 +90,9 @@ function showIntervention(data) {
   document.body.appendChild(overlay);
   
   // Play voice with multiple fallback strategies
-  playVoiceWithFallback(data.message, data.voiceType, data.domain);
+  // Use audioFile from backend if available, otherwise fallback to selection logic
+  const audioFile = data.audioFile || selectAudioFile(data.message, data.domain);
+  playVoiceWithFallback(audioFile, data.message);
   
   // Add event listeners
   document.getElementById('habit-breaker-break').addEventListener('click', () => {
@@ -108,14 +110,14 @@ function showIntervention(data) {
 }
 
 // 多重策略播放語音，嘗試繞過自動播放限制
-function playVoiceWithFallback(message, voiceType, domain) {
-  console.log('🔊 Attempting to play voice for:', domain);
+function playVoiceWithFallback(audioFile, message) {
+  console.log('🔊 Attempting to play audio file:', audioFile);
+  console.log('📝 Message:', message);
   
-  // 選擇語音檔案
-  const audioFile = selectAudioFile(message, domain);
+  // 構建音檔 URL
   const audioUrl = chrome.runtime.getURL(`assets/voices/${audioFile}`);
   
-  console.log('🎵 Selected audio:', audioFile);
+  console.log('🎵 Audio URL:', audioUrl);
   
   let playedSuccessfully = false;
   
