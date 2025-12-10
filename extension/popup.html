@@ -205,6 +205,20 @@
       <p>Your AI productivity guardian</p>
     </div>
     
+    <!-- User Profile Section (準備 Clerk 整合) -->
+    <div class="toggle-section" id="userSection">
+      <div class="toggle-row">
+        <span class="toggle-label">👤 User Profile</span>
+        <button class="login-btn" id="loginBtn" style="padding: 6px 12px; background: rgba(255,255,255,0.3); border: none; border-radius: 6px; color: white; cursor: pointer; font-size: 12px; font-weight: 600;">
+          Sign In
+        </button>
+      </div>
+      <div id="userInfo" style="display: none; margin-top: 8px; font-size: 13px; opacity: 0.9;">
+        <div>Email: <span id="userEmail">-</span></div>
+        <div>Plan: <span id="userPlan">Free</span></div>
+      </div>
+    </div>
+    
     <div class="toggle-section">
       <div class="toggle-row">
         <span class="toggle-label">Enable Interventions</span>
@@ -215,12 +229,35 @@
       </div>
     </div>
     
+    <!-- Sensitivity Settings -->
+    <div class="toggle-section">
+      <div class="toggle-label" style="margin-bottom: 12px;">Sensitivity</div>
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <button class="voice-btn sensitivity-btn" data-sensitivity="low" style="flex: 1; padding: 8px; font-size: 13px;">
+          😌 Relaxed
+        </button>
+        <button class="voice-btn sensitivity-btn active" data-sensitivity="medium" style="flex: 1; padding: 8px; font-size: 13px;">
+          😐 Normal
+        </button>
+        <button class="voice-btn sensitivity-btn" data-sensitivity="high" style="flex: 1; padding: 8px; font-size: 13px;">
+          😤 Strict
+        </button>
+      </div>
+      <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">
+        <span id="sensitivityDesc">Balanced detection (10-15s)</span>
+      </div>
+    </div>
+    
     <div class="voice-section">
       <label class="voice-label">Voice Personality</label>
-      <div class="voice-options">
+      <div class="voice-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
         <button class="voice-btn active" data-voice="mom">👩 Mom</button>
         <button class="voice-btn" data-voice="idol">⭐ Idol</button>
         <button class="voice-btn" data-voice="coach">💪 Coach</button>
+        <button class="voice-btn" data-voice="churchill">🇬🇧 Churchill</button>
+      </div>
+      <div style="font-size: 10px; opacity: 0.7; margin-top: 8px; text-align: center;">
+        🎯 Churchill voice for British judges!
       </div>
     </div>
     
@@ -247,6 +284,7 @@
     </div>
   </div>
   
+  <script src="clerk-config.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

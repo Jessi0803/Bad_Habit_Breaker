@@ -19,16 +19,53 @@ const groq = new Groq({
  */
 export async function generatePersonalizedMessage(behaviorData) {
   try {
-    const { site, timeSpent, visitCount, currentTime } = behaviorData;
+    const { site, timeSpent, visitCount, currentTime, voiceType = 'mom' } = behaviorData;
 
-    const prompt = `You are a caring but firm life coach. A user has been on ${site} for ${timeSpent} seconds (this is their visit #${visitCount} today, current time: ${currentTime}).
+    // Define personality styles
+    const personalities = {
+      mom: {
+        style: "a caring but firm mother",
+        examples: [
+          "Third Instagram visit today? Your goals won't wait forever.",
+          "30 minutes on shopping sites. Your wallet thanks you for stopping.",
+          "TikTok at 2pm on a workday? Come on, you're better than this."
+        ]
+      },
+      idol: {
+        style: "a motivational celebrity idol, energetic and inspiring",
+        examples: [
+          "Legends don't scroll Instagram! Time to shine, superstar!",
+          "Your success story starts when you close this tab. Let's go!",
+          "Champions focus. You're a champion. Prove it right now!"
+        ]
+      },
+      coach: {
+        style: "a tough but supportive fitness coach",
+        examples: [
+          "Drop and give me 20! Then get back to WORK!",
+          "No pain, no gain. No focus, no success. Move it!",
+          "This is your training ground. Stop wasting reps on ${site}!"
+        ]
+      },
+      churchill: {
+        style: "Winston Churchill, the British Prime Minister - authoritative, dramatic, and inspiring with wartime rhetoric",
+        examples: [
+          "We shall never surrender to distraction! Close this page immediately!",
+          "Never in the field of productivity was so much wasted by so few. Return to your duties!",
+          "Success is not final, scrolling is not progress. Get back to work!",
+          "This is not the time for ${site}! We must fight on, work on, focus on!"
+        ]
+      }
+    };
 
-Generate a SHORT (max 15 words), impactful message to snap them out of the distraction. Be direct but caring.
+    const personality = personalities[voiceType] || personalities.mom;
 
-Examples:
-- "Third Instagram visit today? Your goals won't wait forever."
-- "30 minutes on shopping sites. Your wallet thanks you for stopping."
-- "TikTok at 2pm on a workday? Come on, you're better than this."
+    const prompt = `You are ${personality.style}. A user has been on ${site} for ${timeSpent} seconds (this is their visit #${visitCount} today, current time: ${currentTime}).
+
+Generate a SHORT (max 20 words), impactful message to snap them out of the distraction. ${voiceType === 'churchill' ? 'Use dramatic, wartime-style rhetoric like Churchill would.' : 'Be direct but caring.'}
+
+Examples of ${voiceType} style:
+${personality.examples.map(ex => `- "${ex}"`).join('\n')}
 
 Return ONLY the message, nothing else.`;
 

@@ -8,11 +8,18 @@ const USE_LLM = true; // Set to false to use fixed messages
 // Visit count tracking (for LLM context)
 const visitCounts = new Map();
 
-// Configuration
+// Sensitivity thresholds
+const SENSITIVITY_MULTIPLIERS = {
+  high: 0.5,    // 5-10s
+  medium: 1.0,  // 10-15s (default)
+  low: 3.0      // 30-60s
+};
+
+// Configuration (base thresholds, will be adjusted by sensitivity)
 const BAD_HABITS = [
   { 
     domain: "instagram.com", 
-    threshold: 10, // seconds - DEMO MODE (original: 120)
+    threshold: 10, // seconds - DEMO MODE (will be adjusted by sensitivity)
     messages: ["Instagram can wait! You have important things to do!", "Stop scrolling and get back to work!"]
   },
   { 
@@ -69,7 +76,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 // Check if URL matches any bad habit and start monitoring
-function checkAndStartMonitoring(tabId, url) {
+async function checkAndStartMonitoring(tabId, url) {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname.replace('www.', '');
@@ -82,6 +89,11 @@ function checkAndStartMonitoring(tabId, url) {
     });
     
     if (habit) {
+      // Get user sensitivity setting
+      const settings = await chrome.storage.sync.get({ sensitivity: 'medium' });
+      const multiplier = SENSITIVITY_MULTIPLIERS[settings.sensitivity] || 1.0;
+      const adjustedThreshold = Math.round(habit.threshold * multiplier);
+      
       // Track visit count for this domain
       const today = new Date().toDateString();
       const visitKey = `${domain}_${today}`;
@@ -94,15 +106,17 @@ function checkAndStartMonitoring(tabId, url) {
         url: url,
         domain: domain,
         habit: habit,
+        threshold: adjustedThreshold, // Use adjusted threshold
         alerted: false,
         visitCount: currentCount + 1
       });
       
-      console.log(`Monitoring started for tab ${tabId}: ${domain} (visit #${currentCount + 1} today)`);
+      console.log(`📊 Monitoring started for tab ${tabId}: ${domain}`);
+      console.log(`   Visit #${currentCount + 1} today | Threshold: ${adjustedThreshold}s (${settings.sensitivity} sensitivity)`);
       
       // Set up alarm to check threshold
       chrome.alarms.create(`check_${tabId}`, {
-        delayInMinutes: habit.threshold / 60,
+        delayInMinutes: adjustedThreshold / 60,
         periodInMinutes: 0.5 // Check every 30 seconds after threshold
       });
     } else {
@@ -135,9 +149,10 @@ async function checkTabActivity(tabId) {
   }
   
   const elapsedTime = (Date.now() - activity.startTime) / 1000; // seconds
+  const threshold = activity.threshold || activity.habit.threshold; // Use adjusted threshold
   
-  if (elapsedTime >= activity.habit.threshold) {
-    console.log(`Threshold exceeded for tab ${tabId}: ${elapsedTime}s`);
+  if (elapsedTime >= threshold) {
+    console.log(`⚠️  Threshold exceeded for tab ${tabId}: ${elapsedTime.toFixed(1)}s (limit: ${threshold}s)`);
     
     // Mark as alerted to prevent multiple interventions
     activity.alerted = true;
@@ -183,7 +198,8 @@ async function triggerIntervention(tabId, activity) {
               hour: '2-digit', 
               minute: '2-digit',
               hour12: false 
-            })
+            }),
+            voiceType: settings.voiceType || 'mom'  // Pass voice personality to LLM
           })
         });
         

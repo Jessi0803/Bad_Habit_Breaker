@@ -67,10 +67,30 @@ function showIntervention(data) {
   // Create overlay
   const overlay = document.createElement('div');
   overlay.id = 'habit-breaker-overlay';
+  
+  // Check if Churchill voice is selected
+  const isChurchill = data.voiceType === 'churchill';
+  
+  // Churchill image HTML (if Churchill voice)
+  const churchillImageHTML = isChurchill ? `
+    <div style="text-align: center; margin-bottom: 20px;">
+      <img src="${chrome.runtime.getURL('assets/images/Winston-Churchill.webp')}" 
+           alt="Winston Churchill" 
+           style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.3); object-fit: cover;">
+      <div style="margin-top: 10px; font-size: 14px; opacity: 0.9; font-weight: 600;">
+        🇬🇧 Prime Minister Churchill
+      </div>
+    </div>
+  ` : '';
+  
+  const icon = isChurchill ? '🇬🇧' : '🚫';
+  const title = isChurchill ? 'Prime Minister Says:' : 'Hold On!';
+  
   overlay.innerHTML = `
     <div class="habit-breaker-modal">
-      <div class="habit-breaker-icon">🚫</div>
-      <h1 class="habit-breaker-title">Hold On!</h1>
+      ${churchillImageHTML}
+      <div class="habit-breaker-icon">${icon}</div>
+      <h1 class="habit-breaker-title">${title}</h1>
       <p class="habit-breaker-message">${escapeHtml(data.message)}</p>
       <div class="habit-breaker-stats">
         <p>You've been on <strong>${escapeHtml(data.domain)}</strong></p>

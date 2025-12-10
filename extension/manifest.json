@@ -7,10 +7,13 @@
     "tabs",
     "storage",
     "scripting",
-    "alarms"
+    "alarms",
+    "identity"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "https://*.clerk.accounts.dev/*",
+    "https://api.clerk.dev/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -27,9 +30,17 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["assets/voices/*.mp3"],
+      "resources": [
+        "assets/voices/*.mp3", 
+        "assets/images/*.jpg",
+        "assets/images/*.webp",
+        "clerk-config.js"
+      ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }
 
