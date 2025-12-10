@@ -9,6 +9,9 @@ yarn.lock
 .env.*.local
 backend/.env
 
+# Private team configuration (contains API keys)
+PRIVATE_TEAM_CONFIG.txt
+
 # Build outputs
 dist/
 build/

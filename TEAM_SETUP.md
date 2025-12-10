@@ -4,7 +4,9 @@
 
 ---
 
-## 📦 快速開始 (5 分鐘)
+## 📦 快速開始 (3 分鐘)
+
+**🎉 超簡單！所有 API Keys 已配置好，直接複製貼上即可！**
 
 ### Step 1: 克隆專案
 
@@ -49,89 +51,98 @@ npm install
 touch .env
 ```
 
-**編輯 `.env` 檔案，加入以下內容：**
+**✨ 團隊成員專用：直接複製以下內容到 `.env` 檔案！**
+
+**編輯 `.env` 檔案，貼上以下完整配置：**
 
 ```bash
 # ========================================
-# 🧠 Groq LLM API Key (必須)
+# 🚀 Habit Breaker - Team Shared Configuration
+# 團隊共用配置（Hackathon 專用）
 # ========================================
-# 取得位置: https://console.groq.com/keys
-GROQ_API_KEY=gsk_your_groq_api_key_here
 
 # ========================================
-# 🎙️ ElevenLabs API Key (可選，用於動態語音)
+# 🧠 Groq LLM API Key (必須 / Required)
 # ========================================
-# 取得位置: https://elevenlabs.io/app/settings/api-keys
-# 如果沒有此 key，會使用預先生成的 MP3 檔案
-ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+# 團隊共用 Key - 請向 Jessi 索取！
+# Team shared key - Ask Jessi for the key!
+GROQ_API_KEY=ask_jessi_for_groq_key
 
 # ========================================
-# 📧 Email 設定 (可選，用於發送每日報告)
+# 🎙️ ElevenLabs API Key (已配置 / Configured)
 # ========================================
-# Gmail App Password 教學: https://support.google.com/accounts/answer/185833
-EMAIL_USER=your.email@gmail.com
-EMAIL_PASSWORD=your_gmail_app_password
+# 團隊共用 Key（Creator 方案）
+# Team shared key (Creator plan)
+# 請向 Jessi 索取！Ask Jessi!
+ELEVENLABS_API_KEY=ask_jessi_for_elevenlabs_key
 
 # ========================================
-# 🔧 Server 設定
+# 📧 Email Settings (已配置 / Configured)
+# ========================================
+# 團隊共用 Gmail - 請向 Jessi 索取！
+# Team shared Gmail - Ask Jessi!
+EMAIL_USER=ask_jessi
+EMAIL_PASSWORD=ask_jessi
+
+# ========================================
+# 🔧 Server Configuration
 # ========================================
 PORT=3000
 NODE_ENV=development
 ```
 
----
+**📧 請向 Jessi 索取完整的 API Keys！**
 
-### 📝 如何取得 API Keys？
+**為什麼不直接放在 GitHub？**
+- 🔒 安全考量（API Keys 不應公開）
+- 🛡️ GitHub 會阻止包含 secrets 的推送
+- ✅ 私密分享更安全
 
-#### 1️⃣ **Groq API Key** (必須，免費)
-
-1. 訪問：https://console.groq.com/keys
-2. 登入或註冊帳號（免費）
-3. 點擊 "Create API Key"
-4. 複製 key（格式：`gsk_...`）
-5. 貼到 `.env` 的 `GROQ_API_KEY`
-
-**優點：**
-- ✅ 完全免費
-- ✅ 速度極快
-- ✅ 無配額限制（合理使用內）
+**如何獲取：**
+- 透過 Slack/Discord/Line 直接向 Jessi 索取
+- Jessi 會提供完整的 `.env` 配置
+- 複製貼上即可使用
 
 ---
 
-#### 2️⃣ **ElevenLabs API Key** (可選)
+### 💡 關於共用 API Keys
 
-**選項 A: 使用預先生成的音檔（推薦給測試）**
-- 不需要 API Key
-- 使用 `extension/assets/voices/*.mp3`
-- 已包含 10 個音檔
+**✅ 優點：**
+- 不需要自己申請帳號
+- 立即可用，節省設置時間
+- 統一配置，避免錯誤
+- 適合 Hackathon 團隊協作
 
-**選項 B: 啟用動態語音生成**
-1. 訪問：https://elevenlabs.io/app/settings/api-keys
-2. 註冊帳號
-3. 免費方案：10,000 字符/月（約 200 次干預）
-4. 付費方案（$22/月）：100,000 字符/月
-5. 複製 API Key
-6. 貼到 `.env` 的 `ELEVENLABS_API_KEY`
+**⚠️ 注意事項：**
+- 這些是團隊共用的 keys，請**不要分享給團隊外的人**
+- ElevenLabs 有月配額限制（100K 字符），合理使用
+- Groq 免費且快速，無需擔心配額
 
-**如果沒有配置：**
-- ✅ Extension 仍正常運作
-- ✅ 使用預先生成的 MP3 檔案
-- ❌ 無法即時生成與 LLM 文字匹配的語音
+**📊 配額說明：**
+- **Groq LLM**: 免費無限制（合理使用內）
+- **ElevenLabs**: 100K 字符/月 ≈ 2,000 次干預（足夠 Demo 和測試）
+- **Gmail**: 每日發送限制 500 封（測試綽綽有餘）
 
 ---
 
-#### 3️⃣ **Gmail App Password** (可選，用於 Email 報告)
+### 🔑 API Keys 詳細說明
 
-1. 訪問：https://myaccount.google.com/apppasswords
-2. 選擇應用：「郵件」
-3. 選擇裝置：「其他」，輸入 "Habit Breaker"
-4. 點擊「產生」
-5. 複製 16 位密碼（格式：`xxxx xxxx xxxx xxxx`）
-6. 貼到 `.env` 的 `EMAIL_PASSWORD`
+#### **Groq LLM** (已配置 ✅)
+- **用途**: 動態生成個性化干預訊息
+- **方案**: 免費
+- **狀態**: 團隊共用，立即可用
+- **不使用會**: ❌ 無法生成動態訊息（核心功能失效）
 
-**如果沒有配置：**
-- ✅ Extension 仍正常運作
-- ❌ 無法發送每日報告 Email
+#### **ElevenLabs TTS** (已配置 ✅)
+- **用途**: 即時語音生成（Text-to-Speech）
+- **方案**: Creator ($22/月)
+- **狀態**: 團隊共用，立即可用
+- **不使用會**: ⚠️ 仍可使用預先生成的 MP3，但無法即時生成新語音
+
+#### **Gmail SMTP** (已配置 ✅)
+- **用途**: 發送每日報告 Email
+- **狀態**: 團隊共用，立即可用
+- **不使用會**: ⚠️ 無法發送 Email，其他功能正常
 
 ---
 
@@ -287,146 +298,6 @@ curl -X POST http://localhost:3000/api/generate-intervention \
      ✅ LLM generated: "..."
      ```
 
----
-
-## 🐛 常見問題
-
-### ❌ 問題 1: `npm install` 失敗
-
-**錯誤訊息：**
-```
-npm ERR! code EPERM
-npm ERR! Your cache folder contains root-owned files
-```
-
-**解決方案：**
-```bash
-sudo chown -R $(whoami) ~/.npm
-npm install
-```
-
----
-
-### ❌ 問題 2: Backend 無法啟動
-
-**錯誤訊息：**
-```
-Error: Cannot find module 'express'
-```
-
-**解決方案：**
-```bash
-cd backend
-rm -rf node_modules package-lock.json
-npm install
-node server.js
-```
-
----
-
-### ❌ 問題 3: Port 3000 已被佔用
-
-**錯誤訊息：**
-```
-Error: listen EADDRINUSE: address already in use :::3000
-```
-
-**解決方案：**
-```bash
-# 停止舊的 server
-pkill -f "node server.js"
-
-# 或者使用不同的 port
-PORT=3001 node server.js
-```
-
-**如果使用不同 port，需要更新 Extension：**
-```javascript
-// extension/background.js (第 5 行)
-const BACKEND_URL = 'http://localhost:3001';  // 改成新的 port
-```
-
----
-
-### ❌ 問題 4: LLM API 失敗
-
-**錯誤訊息（Backend Console）：**
-```
-❌ Error generating intervention: 401 Unauthorized
-```
-
-**原因：** Groq API Key 無效或未設置
-
-**解決方案：**
-1. 檢查 `.env` 檔案是否存在
-2. 確認 `GROQ_API_KEY` 正確
-3. 重新啟動 Backend
-
-```bash
-# 檢查 .env
-cat backend/.env
-
-# 應該看到：
-# GROQ_API_KEY=gsk_...
-
-# 重啟 server
-pkill -f "node server.js"
-node server.js
-```
-
----
-
-### ❌ 問題 5: Extension 不跳出干預
-
-**可能原因和解決方案：**
-
-**原因 1: Backend 沒運行**
-```bash
-# 測試
-curl http://localhost:3000/health
-
-# 如果失敗，啟動 backend
-cd backend && node server.js
-```
-
-**原因 2: Extension 沒完全載入**
-```
-1. chrome://extensions
-2. 找到 Habit Breaker
-3. 點擊 🔄 重新載入
-4. 關閉所有測試分頁
-5. 開新分頁測試
-```
-
-**原因 3: 等待時間不夠**
-- 確保在分頁上停留 **至少 15 秒**
-- 不要切換分頁
-
-**原因 4: 網站不在監控列表**
-- 目前監控：Instagram, Facebook, YouTube, TikTok, Amazon, Twitter/X
-- 其他網站不會觸發
-
----
-
-### ❌ 問題 6: 語音不播放
-
-**解決方案：**
-
-1. **檢查音檔存在**
-   ```bash
-   ls extension/assets/voices/
-   # 應該看到 10 個 .mp3 檔案
-   ```
-
-2. **瀏覽器自動播放限制**
-   - 在頁面上點擊或滾動一下
-   - 這會"解鎖"音訊播放權限
-
-3. **檢查系統音量**
-   - 音量 > 0
-   - Chrome 未靜音
-
----
 
 ## 📚 專案結構說明
 
@@ -456,161 +327,4 @@ Bad_Habit_Breaker/
 ├── TEAM_SETUP.md             # 本檔案（團隊設置指南）
 └── .gitignore                # Git 忽略檔案
 ```
-
----
-
-## 🎯 開發工作流程
-
-### 團隊協作建議
-
-**前端開發者：**
-```bash
-# 專注於 Extension
-cd extension
-
-# 修改後重新載入
-chrome://extensions → 🔄 重新載入
-```
-
-**後端開發者：**
-```bash
-# 專注於 Backend API
-cd backend
-
-# 修改後重啟
-pkill -f "node server.js"
-node server.js
-
-# 測試 API
-curl -X POST http://localhost:3000/api/generate-intervention ...
-```
-
-**測試與整合：**
-```bash
-# 同時啟動 Backend
-cd backend && node server.js
-
-# 開新終端機測試整合
-curl http://localhost:3000/health
-# 然後在 Chrome 測試 Extension
-```
-
----
-
-## 🔄 Git 工作流程
-
-### 獲取最新程式碼
-
-```bash
-# 拉取最新變更
-git pull origin main
-
-# 重新安裝依賴（如果 package.json 有更新）
-cd backend
-npm install
-```
-
-### 提交你的變更
-
-```bash
-# 查看變更
-git status
-
-# 添加檔案
-git add .
-
-# 提交
-git commit -m "描述你的變更"
-
-# 推送
-git push origin main
-```
-
----
-
-## 📧 聯絡與支援
-
-**遇到問題？**
-
-1. **檢查本指南的「常見問題」章節**
-2. **查看 Backend Console 錯誤訊息**
-3. **查看 Extension Service Worker Console**
-4. **聯絡團隊其他成員**
-
-**重要檔案：**
-- `README_COMPLETE.md` - 完整功能說明
-- `backend/EMAIL_CONFIG.md` - Email 設定詳細指南
-- `N8N_DAILY_REPORT.md` - n8n 整合說明
-
----
-
-## ✅ 設置完成檢查清單
-
-- [ ] Git clone 完成
-- [ ] Node.js 依賴已安裝 (`npm install`)
-- [ ] `.env` 檔案已創建並配置
-- [ ] Groq API Key 已設置
-- [ ] Backend 成功啟動
-- [ ] Backend health check 通過
-- [ ] Chrome Extension 已載入
-- [ ] 測試干預功能成功
-- [ ] 語音播放正常
-
-**全部打勾 → 你可以開始開發了！** 🎉
-
----
-
-## 🚀 快速指令參考
-
-```bash
-# 啟動 Backend
-cd backend && node server.js
-
-# 測試 Backend
-curl http://localhost:3000/health
-
-# 測試 LLM API
-curl -X POST http://localhost:3000/api/generate-intervention \
-  -H "Content-Type: application/json" \
-  -d '{"site":"instagram.com","timeSpent":30,"visitCount":1,"voiceType":"mom"}'
-
-# 重啟 Backend
-pkill -f "node server.js" && sleep 2 && node server.js
-
-# 拉取最新程式碼
-git pull origin main
-
-# 重新載入 Extension
-# chrome://extensions → 🔄 重新載入
-
-# 檢查 Extension Console
-# chrome://extensions → "service worker" 連結
-```
-
----
-
-## 🎬 Demo 準備
-
-**黑客松展示前：**
-
-1. ✅ Backend 運行中
-2. ✅ Extension 已載入
-3. ✅ 選擇 Churchill 語音（給英國評審）
-4. ✅ 測試 Instagram/Facebook 干預
-5. ✅ 確認累計時間功能正常
-6. ✅ 確認語音播放正常
-
-**展示流程：**
-1. 說明專案概念
-2. 展示 Extension 設定
-3. 訪問 Instagram，等待干預
-4. 指出累計時間功能
-5. 按 Continue，再次訪問，展示累計
-6. 強調 LLM 動態生成 + ElevenLabs 語音
-
----
-
-**Good luck! 🚀**
-
-有問題隨時問！
 
