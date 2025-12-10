@@ -20,34 +20,50 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
 ## 📋 Complete Feature & Technology Stack
 ### 功能與技術總覽
 
-#### 🎯 核心功能 (12 Features)
+#### 🎯 核心功能 (13 Features)
 
 1. **🎙️ Voice Interventions | 語音干預** `✅ 100%`
-   - ElevenLabs Voice AI
+   - ElevenLabs Voice AI with real-time TTS generation
    - 4 voice personalities: Mom, Idol, Coach, Churchill
    - Authentic British accents
-   - 10 pre-generated MP3 files (630 KB total)
+   - Dynamic voice generation (text-to-speech on-the-fly)
+   - 10 pre-generated MP3 files as fallback (630 KB total)
 
 2. **🧠 Dynamic AI Messages | 動態 AI 訊息** `✅ 100%`
    - Groq LLM (Llama 3.3 70B)
    - Real-time personalized message generation
    - 4 personality-specific prompts
-   - Context-aware responses （依據瀏覽網頁的時間越久 產生的回應不同）
+   - Context-aware responses (依據累計使用時間和訪問次數生成不同嚴厲程度的回應)
+   - Adaptive severity levels based on cumulative usage
 
-3. **🎨 Full-Screen Interventions | 全螢幕干預** `✅ 100%`
+3. **⏱️ Cumulative Time Tracking | 累計時間追蹤** `✅ 100% NEW!`
+   - Track total daily usage per website
+   - Persistent across browser sessions (關閉/重開分頁仍累計)
+   - Automatic midnight reset
+   - Real-time accumulation in Chrome Storage
+   - Display in intervention UI with bilingual support
+   - LLM-aware (AI generates stricter messages based on cumulative time)
+   - Severity escalation: 5min+ → medium, 10min+ → high
+
+4. **🎨 Full-Screen Interventions | 全螢幕干預** `✅ 100%`
    - HTML5 + CSS3 beautiful UI
    - Blur effects and animations
+   - Bilingual display (English/Chinese)
+   - Cumulative time display with red highlighting
+   - Churchill special UI with historical photos
 
 5. **⚙️ User Settings | 用戶設定** `✅ 100%`
    - Chrome Storage API (sync across devices)
    - Voice personality selection
    - 3 sensitivity levels (Low/Medium/High)
+   - Session-based preference storage
 
 
-7. **📧 Email Reports | Email 報告** `✅ 100%`
+6. **📧 Email Reports | Email 報告** `✅ 100%`
    - nodemailer + Gmail SMTP
    - HTML & plain text formats
    - Automated daily delivery
+   - Behavior insights and achievements
 
 
 ---
@@ -86,28 +102,34 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
 
 **Frontend:**
 - Chrome Extension (Manifest V3)
-- JavaScript ES6+
-- HTML5 + CSS3 (Gradient UI)
+- JavaScript ES6+ (async/await, Map, Set)
+- HTML5 + CSS3 (Gradient UI, animations)
 - Chrome APIs: Storage, Tabs, Alarms, Scripting
+- Bilingual UI (English/Chinese)
 
 **Backend:**
 - Node.js + Express
 - REST API (7 endpoints)
 - nodemailer (Email)
-- Groq SDK (LLM)
+- Groq SDK (LLM integration)
+- ElevenLabs API (Real-time TTS)
 - dotenv (Configuration)
 
 **Voice & AI:**
-- ElevenLabs API (Voice synthesis)
-- Groq LLM (Text generation)
-- Pre-generated MP3 files (10 total)
-- Chrome Audio API (Playback)
+- ElevenLabs API (Real-time voice synthesis)
+- Groq LLM (Dynamic text generation)
+- Pre-generated MP3 files (10 total, fallback)
+- Chrome Audio API (Playback & autoplay handling)
+- Base64 audio streaming
 
 **Data & Storage:**
-- Chrome Storage API (User preferences)
-- In-memory data (Session state)
+- Chrome Storage API (User preferences + daily tracking)
+- chrome.storage.local (Daily time tracking, intervention history)
+- chrome.storage.sync (User settings across devices)
+- In-memory data (Session state, tab monitoring)
 - JSON reports (Daily stats)
 - File system (Voice/image assets)
+- Persistent daily tracking with auto-reset
 
 **Automation & Integration:**
 - n8n (Workflow automation)
@@ -122,15 +144,17 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
 
 **Code Metrics:**
 - 📁 Total Files: `50+`
-- 📝 Lines of Code: `~5,000`
-- 🗣️ Voice Files: `10` (630 KB)
+- 📝 Lines of Code: `~5,500+` (增加累計時間追蹤功能)
+- 🗣️ Voice Files: `10` (630 KB) + Real-time TTS
 - 🖼️ Images: `2` (Churchill photos)
 - 📡 API Endpoints: `7`
 - 📚 Documentation: `8` guides
+- 🔧 Functions: `30+` (including tracking logic)
 
 **Features:**
-- ✅ Completed: `11/12` (92%)
-- 🚧 In Progress: `1/12` (8%)
+- ✅ Completed: `13/13` (100%) 🎉
+- 🚀 Core Features: All implemented
+- ⏱️ Tracking Systems: Daily time + Visit count + Session monitoring
 - 🎙️ Voice Personalities: `4`
 - 🌍 Languages: `2` (EN/中文)
 - 🔌 Partner Integrations: `4`
@@ -147,9 +171,11 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
 #### API 端點列表
 
 1. **POST** `/api/generate-intervention`
-   - Generate personalized intervention message
-   - 生成個性化干預訊息
-   - Tech: Groq LLM + Voice selection logic
+   - Generate personalized intervention message with cumulative time tracking
+   - 生成包含累計時間追蹤的個性化干預訊息
+   - **Input:** `{ site, timeSpent, todayTotalTime, visitCount, voiceType, useDynamicVoice }`
+   - **Output:** `{ message, audioFile/audioBase64, severity, usedDynamicVoice }`
+   - Tech: Groq LLM + ElevenLabs TTS + Cumulative time analysis
 
 2. **POST** `/api/should-intervene`
    - LLM-based smart behavior analysis
@@ -162,9 +188,9 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
    - Tech: Data logging
 
 4. **GET** `/api/stats`
-   - Get daily statistics
-   - 獲取每日統計
-   - Tech: Data aggregation
+   - Get daily statistics (including cumulative time)
+   - 獲取每日統計（包含累計時間）
+   - Tech: Data aggregation with daily tracking
 
 5. **POST** `/api/daily-report`
    - Generate comprehensive daily report
@@ -180,6 +206,11 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
    - Test email configuration
    - 測試 Email 配置
    - Tech: SMTP verification
+
+8. **GET** `/api/health`
+   - Check backend status
+   - 檢查後端狀態
+   - Tech: Health check endpoint
 
 ---
 
@@ -201,25 +232,57 @@ Choose your intervention style:
 ### 2. 🧠 AI-Powered Dynamic Messages
 
 **Groq LLM Integration:**
-- Analyzes your behavior (site, time spent, visit count)
+- Analyzes your behavior (site, time spent, **cumulative daily time**, visit count)
 - Generates personalized messages in real-time
 - Adapts tone based on selected personality
+- **Adjusts severity based on total daily usage** (5min+ → stricter, 10min+ → very strict)
 - Churchill mode uses wartime rhetoric style
 
 **Example outputs:**
 ```
-Mom:       "Third Instagram visit today? Your goals won't wait forever."
+Mom (first visit):     "Sweetie, you've been on Instagram for 15 seconds..."
+Mom (5 min total):     "You've spent 5 minutes on Instagram today. That's enough!"
+Mom (10 min total):    "TEN MINUTES on Instagram today! This needs to stop NOW!"
+
 Idol:      "Champions focus. You're a champion. Prove it right now!"
 Coach:     "No pain, no gain. No focus, no success. Move it!"
-Churchill: "We shall fight on, we shall work on, we shall focus on!"
+Churchill: "Seven minutes squandered on Instagram! We shall fight on, work on!"
 ```
 
-### 3. 🎨 Rich Visual Interventions
+### 3. ⏱️ Cumulative Time Tracking **NEW!**
+
+**Daily Usage Tracking:**
+- Tracks total time spent on each distracting site **today**
+- Accumulates across multiple visits (even after closing/reopening tabs)
+- Persists in Chrome Storage (survives browser restarts)
+- Automatically resets at midnight
+- LLM uses this data to generate context-aware messages
+
+**Example Flow:**
+```
+09:00 - Visit Instagram (15s) → Total: 15s    → Message: "Stop scrolling!"
+09:30 - Visit Instagram (30s) → Total: 45s    → Message: "Second visit today?"
+14:00 - Visit Instagram (120s) → Total: 165s  → Message: "You've spent 2m 45s today!"
+16:00 - Visit Instagram (180s) → Total: 345s  → Message: "FIVE MINUTES wasted today!"
+20:00 - Visit Instagram (300s) → Total: 645s  → Message: "TEN MINUTES! UNACCEPTABLE!"
+                                   ↑ severity: HIGH
+```
+
+**UI Display:**
+```
+You've been on instagram.com for 30 seconds
+📊 Today's total: 5m 45s  (紅色強調)
+今日累計：5 分 45 秒
+```
+
+### 4. 🎨 Rich Visual Interventions
 
 **Full-screen overlay with:**
 - Personality-specific icons and titles
 - **Churchill mode shows his photo** (when selected)
-- Real-time statistics (time spent, visit count)
+- Real-time statistics (session time, visit count)
+- **📊 Cumulative daily time display** (highlighted in red)
+- **Bilingual support** (English + Chinese)
 - Action buttons (Take a Break / Continue Anyway)
 - Beautiful gradient design with blur effects
 
@@ -515,8 +578,11 @@ node server.js
 
 **Technical Highlights:**
 > "This isn't just playing audio files — we're using Groq LLM to analyze your 
-> behavior in real-time and generate personalized messages. Every intervention 
-> is unique and contextual."
+> behavior in real-time, including cumulative daily usage, and generate 
+> personalized messages. The AI knows how much time you've wasted today and 
+> adapts its response accordingly. We're also using ElevenLabs' real-time TTS 
+> to generate voice that matches the LLM text perfectly. Every intervention 
+> is unique, contextual, and escalates with usage."
 
 **Real-World Impact:**
 > "Studies show the average person wastes 2+ hours daily on distractions. 
@@ -789,6 +855,95 @@ For detailed troubleshooting, see: **RELOAD_EXTENSION.md**
 4. **Browser Support:** Chrome only (Manifest V3). Firefox/Edge support requires adaptation.
 
 5. **Data Persistence:** Uses Chrome Storage API. No cloud backup yet.
+
+---
+
+## 💻 Technical Implementation Details
+
+### ⏱️ Cumulative Time Tracking System
+
+**Architecture:**
+
+```javascript
+// Chrome Storage Structure
+{
+  dailyTimeTracking: {
+    'instagram.com': 450,    // 7.5 minutes
+    'facebook.com': 180,     // 3 minutes  
+    'youtube.com': 600       // 10 minutes
+  },
+  trackingDate: 'Wed Dec 11 2025'  // Auto-reset check
+}
+```
+
+**Implementation Flow:**
+
+1. **Initialization** (background.js startup)
+   ```javascript
+   chrome.storage.local.get(['dailyTimeTracking', 'trackingDate'], (result) => {
+     if (result.trackingDate === today) {
+       // Load existing data
+       dailyTimeTracking = result.dailyTimeTracking;
+     } else {
+       // New day, reset
+       dailyTimeTracking = {};
+     }
+   });
+   ```
+
+2. **Session Tracking** (per tab)
+   ```javascript
+   // When threshold exceeded
+   const sessionTime = (Date.now() - activity.startTime) / 1000;
+   addToDailyTracking(domain, sessionTime);  // Add to cumulative
+   ```
+
+3. **LLM Context Enhancement**
+   ```javascript
+   // Pass to backend API
+   {
+     site: 'instagram.com',
+     timeSpent: 30,              // This session
+     todayTotalTime: 450,        // Cumulative today
+     visitCount: 3,              // Visits today
+     voiceType: 'churchill',
+     useDynamicVoice: true
+   }
+   ```
+
+4. **Adaptive Severity Calculation**
+   ```javascript
+   // In llm-service-groq.js
+   if (todayTotalTime > 600 || visitCount > 5) {
+     severity = "high";         // 10+ minutes
+   } else if (todayTotalTime > 300) {
+     severity = "medium";       // 5+ minutes
+   } else {
+     severity = "low";
+   }
+   ```
+
+5. **UI Display** (content.js)
+   ```javascript
+   // Show cumulative time in intervention overlay
+   📊 Today's total: 7m 30s  (highlighted in red)
+   今日累計：7 分 30 秒
+   ```
+
+**Key Benefits:**
+- ✅ Persistent across browser sessions
+- ✅ Per-site granular tracking
+- ✅ Automatic daily reset (no manual cleanup)
+- ✅ LLM-aware (AI knows total usage)
+- ✅ Drives severity escalation
+- ✅ User awareness of actual daily habits
+
+**Technical Challenges Solved:**
+1. **State Persistence:** Chrome Storage API for reliable cross-session data
+2. **Midnight Reset:** Date comparison for automatic daily rollover
+3. **Real-time Updates:** In-memory cache + storage sync
+4. **LLM Integration:** Passing cumulative context to prompt
+5. **UI Performance:** Efficient calculation and rendering
 
 ---
 
