@@ -395,8 +395,8 @@ POST /api/send-email-report
 ```mermaid
 graph TB
     subgraph "👤 Client Applications"
-        CE[🌐 Chrome Extension]
-        DA[🖥️ Desktop App<br/>Electron]
+        CE[🌐 Chrome Extension<br/>Browser Monitoring]
+        DA[🖥️ Desktop App<br/>Electron + active-win]
         MA[📱 Mobile App<br/>React Native]
     end
     
