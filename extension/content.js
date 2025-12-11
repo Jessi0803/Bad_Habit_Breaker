@@ -147,36 +147,30 @@ function showIntervention(data) {
     <div class="habit-breaker-modal">
       ${churchillImageHTML}
       <div class="habit-breaker-icon">${icon}</div>
-      <h1 class="habit-breaker-title" style="line-height: 1.4;">
+      <h1 class="habit-breaker-title" style="line-height: 1.3;">
         <span style="display: block;">${title}</span>
-        <span style="display: block; font-size: 0.75em; opacity: 0.85; margin-top: 8px; font-weight: 500;">${titleZh}</span>
+        <span style="display: block; font-size: 0.7em; opacity: 0.85; margin-top: 6px; font-weight: 500;">${titleZh}</span>
       </h1>
-      <p class="habit-breaker-message" style="line-height: 1.6;">
-        <span style="display: block; margin-bottom: 8px; font-size: 18px;">${escapeHtml(data.message)}</span>
-        <span style="display: block; font-size: 15px; opacity: 0.85; font-style: italic;">${escapeHtml(messageZh)}</span>
+      <p class="habit-breaker-message" style="line-height: 1.5;">
+        <span style="display: block; margin-bottom: 6px; font-size: 16px;">${escapeHtml(data.message)}</span>
+        <span style="display: block; font-size: 13px; opacity: 0.85; font-style: italic;">${escapeHtml(messageZh)}</span>
       </p>
       <div class="habit-breaker-stats">
-        <p>You've been on <strong>${escapeHtml(data.domain)}</strong></p>
-        <p style="font-size: 0.85em; opacity: 0.8;">你已經在 <strong>${escapeHtml(data.domain)}</strong> 上</p>
-        <p>for <strong>${data.timeSpent} seconds</strong></p>
-        <p style="font-size: 0.85em; opacity: 0.8;">待了 <strong>${data.timeSpent} 秒</strong></p>
+        <p>You've been on <strong>${escapeHtml(data.domain)}</strong> for <strong>${data.timeSpent} seconds</strong></p>
         ${showTotalTime ? `
-        <p style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 16px; font-weight: 600;">
+        <p style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 14px; font-weight: 600;">
           📊 Today's total: <strong style="color: #ff6b6b;">${totalMinutes}m ${totalSeconds}s</strong>
-        </p>
-        <p style="font-size: 0.85em; opacity: 0.8;">
-          今日累計：<strong style="color: #ff6b6b;">${totalMinutes} 分 ${totalSeconds} 秒</strong>
         </p>
         ` : ''}
       </div>
       <div class="habit-breaker-buttons">
         <button id="habit-breaker-break" class="btn-primary">
-          <div style="font-size: 16px;">✅ Take a Break</div>
-          <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">休息一下</div>
+          <div style="font-size: 14px;">✅ Take a Break</div>
+          <div style="font-size: 11px; opacity: 0.9; margin-top: 3px;">休息一下</div>
         </button>
         <button id="habit-breaker-continue" class="btn-secondary">
-          <div style="font-size: 16px;">⏭️ Continue Anyway</div>
-          <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">繼續瀏覽</div>
+          <div style="font-size: 14px;">⏭️ Continue Anyway</div>
+          <div style="font-size: 11px; opacity: 0.9; margin-top: 3px;">繼續瀏覽</div>
         </button>
       </div>
     </div>
