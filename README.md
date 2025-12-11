@@ -1,6 +1,8 @@
 # 🚫 Habit Breaker
 
-**An AI-powered Chrome extension that monitors your browsing habits and intervenes when you're getting distracted — with real human voices.**
+**An AI-powered multi-platform system that monitors your app usage across Desktop, Mobile, and Browser — with financial incentives and real human voices.**
+
+**Version 2.0** - Extended with Desktop App, Mobile App, Stripe Payments, UberEats Rewards, and Virtual Tour
 
 Built for **ElevenLabs AI Hackathon** | **December 2025**
 
@@ -8,11 +10,14 @@ Built for **ElevenLabs AI Hackathon** | **December 2025**
 
 ## 🎯 Project Overview
 
-Habit Breaker is an intelligent Chrome extension that helps users stay focused by:
-- 🤖 **Real-time monitoring** of browsing behavior
+Habit Breaker is an intelligent multi-platform system that helps users stay focused by:
+- 🤖 **Real-time monitoring** of app usage (Desktop, Mobile, Browser)
+- 💰 **Financial commitment system** - Deposit money, lose it if distracted
+- 🍔 **UberEats rewards** - Get food delivered when you achieve goals
 - 🗣️ **Voice interventions** with authentic human voices (ElevenLabs)
 - 🧠 **AI-generated messages** tailored to your behavior (Groq LLM)
 - 📊 **Daily reports** with insights and achievements
+- 🎬 **Virtual tour** (Anam) - Interactive onboarding experience
 - 🇬🇧 **Special Churchill mode** for British hackathon judges!
 
 ---
@@ -212,6 +217,31 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
    - 檢查後端狀態
    - Tech: Health check endpoint
 
+9. **POST** `/api/user/register` (NEW)
+   - Register new user with financial commitment
+   - 註冊新用戶並設定財務承諾
+   - Tech: Stripe payment intent creation
+
+10. **POST** `/api/tracking/app-usage` (NEW)
+    - Report app usage from Desktop/Mobile
+    - 報告桌面/手機應用使用情況
+    - Tech: Multi-platform app monitoring
+
+11. **POST** `/api/stripe/charge-penalty` (NEW)
+    - Charge penalty fee for distraction
+    - 對分心行為收取罰款
+    - Tech: Stripe charge API
+
+12. **POST** `/api/uber/create-order` (NEW)
+    - Create UberEats order as reward
+    - 創建 UberEats 訂單作為獎勵
+    - Tech: UberEats API integration
+
+13. **GET** `/api/tour/get-tour` (NEW)
+    - Get virtual tour data (Anam)
+    - 獲取虛擬導覽數據
+    - Tech: Anam Platform integration
+
 ---
 
 ## ✨ Key Features
@@ -360,107 +390,142 @@ POST /api/send-email-report
 
 ## 🏗️ Technical Architecture
 
-### System Architecture
+### System Architecture (Extended - Multi-Platform)
 
 ```mermaid
 graph TB
-    subgraph "🌐 User Browser"
-        User[User Browsing] --> Ext[Chrome Extension<br/>Manifest V3]
+    subgraph "👤 User Devices"
+        CE[🌐 Chrome Extension<br/>Browser Monitoring]
+        DA[🖥️ Desktop App<br/>Electron + active-win]
+        MA[📱 Mobile App<br/>React Native/Flutter]
     end
     
-    subgraph "🔌 Extension Layer"
-        Ext --> BG[background.js<br/>Service Worker]
-        Ext --> CS[content.js<br/>Content Script]
-        Ext --> POP[popup.js<br/>Settings UI]
-        BG -->|Monitor| Track[Behavior Tracking<br/>chrome.alarms<br/>chrome.storage.local]
+    subgraph "🔌 Client Layer"
+        CE --> API1[Extension API<br/>Chrome APIs]
+        DA --> API2[Desktop API<br/>active-win + Electron IPC]
+        MA --> API3[Mobile API<br/>Screen Time + Usage Stats]
     end
     
-    subgraph "⚙️ Backend Server"
-        BG -->|API Request| API[Node.js + Express<br/>Port 3000]
-        API --> LLM[llm-service-groq.js]
-        API --> TTS[elevenlabs-integration.js]
-        API --> Report[daily-report-service.js]
-        API --> Email[email-service.js]
+    subgraph "⚙️ Backend Server (Node.js + Express)"
+        API1 --> Backend[Backend API<br/>Port 3000]
+        API2 --> Backend
+        API3 --> Backend
+        
+        Backend --> LLM[🧠 Groq LLM<br/>Message Generation]
+        Backend --> TTS[🎙️ ElevenLabs<br/>Voice Synthesis]
+        Backend --> DB[(💾 Database<br/>PostgreSQL/MongoDB)]
+        Backend --> Stripe[💳 Stripe API<br/>Payment Processing]
+        Backend --> Uber[🍔 UberEats API<br/>Reward Orders]
     end
     
-    subgraph "🤝 Partner Technologies"
-        LLM --> Groq[🧠 Groq LLM<br/>Llama 3.3 70B]
-        TTS --> EL[🎙️ ElevenLabs<br/>TTS API]
-        Email --> Gmail[📧 Gmail SMTP<br/>nodemailer]
-        Report --> n8n[🔄 n8n<br/>Workflow]
+    subgraph "📊 Services & Integrations"
+        Stripe --> Payment[Payment Gateway<br/>Deposits & Penalties]
+        Uber --> Delivery[Food Delivery<br/>Reward System]
+        DB --> Report[📧 Email Reports<br/>n8n + Gmail]
+        DB --> Tour[🎬 Virtual Tour<br/>Anam Platform]
     end
     
-    subgraph "💾 Storage"
-        Track --> Storage[Chrome Storage<br/>Local + Sync]
-        POP --> Storage
+    subgraph "💾 Data Storage"
+        DB --> UserData[(User Profiles<br/>Settings & History)]
+        DB --> Financial[(Financial Records<br/>Deposits & Penalties)]
+        DB --> AppTracking[(App Usage Data<br/>Time & Patterns)]
     end
     
-    API -->|Response| CS
-    CS -->|Display| User
+    Backend -->|Response| API1
+    Backend -->|Response| API2
+    Backend -->|Response| API3
     
-    style User fill:#e1f5ff
-    style Ext fill:#667eea,color:#fff
-    style API fill:#764ba2,color:#fff
+    style CE fill:#667eea,color:#fff
+    style DA fill:#8b5cf6,color:#fff
+    style MA fill:#10b981,color:#fff
+    style Backend fill:#764ba2,color:#fff
+    style Stripe fill:#635bff,color:#fff
+    style Uber fill:#000,color:#fff
+    style DB fill:#fbbf24,color:#000
     style Groq fill:#10b981,color:#fff
     style EL fill:#f59e0b,color:#fff
-    style Gmail fill:#ef4444,color:#fff
-    style n8n fill:#8b5cf6,color:#fff
-    style Storage fill:#fbbf24,color:#000
+    style Tour fill:#8b5cf6,color:#fff
 ```
 
-### Data Flow Sequence
+### Data Flow Sequence (Extended - Financial Incentive System)
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant BG as background.js
-    participant API as Backend API
-    participant G as Groq LLM
-    participant E as ElevenLabs
-    participant CS as content.js
-    participant S as Chrome Storage
+    participant User
+    participant Client as Desktop/Mobile/Extension
+    participant Backend as Backend API
+    participant Stripe as Stripe API
+    participant DB as Database
+    participant Groq as Groq LLM
+    participant EL as ElevenLabs
+    participant Uber as UberEats API
     
-    U->>BG: Browse Instagram
-    BG->>BG: Monitor (chrome.alarms)
-    BG->>S: Track cumulative time
-    BG->>BG: Check threshold (10s)
+    Note over User,Uber: Initial Setup - Financial Commitment
+    User->>Client: Open App (First Time)
+    Client->>Backend: POST /api/user/register
+    Backend->>Stripe: Create Payment Intent
+    Stripe-->>Backend: Payment Intent ID
+    Backend-->>Client: Show Payment Form
+    User->>Stripe: Enter Payment Details
+    Stripe-->>Backend: Payment Confirmed
+    Backend->>DB: Store Deposit Amount
+    Backend-->>Client: Account Activated
     
-    alt Threshold Exceeded
-        BG->>API: POST /api/generate-intervention<br/>{site, timeSpent, todayTotalTime, voiceType}
-        API->>G: Generate message<br/>(Context-aware)
-        G-->>API: AI text
-        API->>E: Text-to-Speech<br/>(Real-time)
-        E-->>API: Base64 audio
-        API-->>BG: {message, audioBase64}
-        BG->>CS: Display overlay
-        CS->>U: Show intervention + Play voice
-        BG->>S: Update daily tracking
+    Note over Client,DB: App Monitoring & Penalty System
+    Client->>Client: Monitor App Usage<br/>(All Apps - Desktop/Mobile/Browser)
+    Client->>Backend: POST /api/tracking/app-usage<br/>{appName, timeSpent, isDistracting}
+    
+    alt Distracting App Detected
+        Backend->>DB: Check Penalty Rules
+        Backend->>Stripe: Charge Penalty Fee
+        Stripe-->>Backend: Payment Processed
+        Backend->>DB: Deduct from Balance
+        Backend->>Groq: Generate Intervention Message
+        Groq-->>Backend: AI-generated Text
+        Backend->>EL: Text-to-Speech<br/>(Real-time)
+        EL-->>Backend: Base64 Audio
+        Backend-->>Client: Show Warning + Penalty Notice + Voice
     end
     
-    Note over API,S: Daily: n8n → Report → Gmail
+    Note over Client,DB: End of Day - Reward System
+    Backend->>DB: Calculate Daily Stats
+    alt No Distractions Today
+        Backend->>Uber: Create Order Request
+        Uber-->>Backend: Order Confirmed
+        Backend->>Stripe: Refund/Use Balance
+        Backend-->>Client: 🎉 Reward Notification + Order Details
+    end
+    
+    Note over Backend,DB: Daily: n8n → Report → Gmail
 ```
 
-### Frontend (Chrome Extension)
+### Frontend (Multi-Platform)
 
 ```
-extension/
-├── manifest.json          # Extension config (Manifest V3)
-├── background.js          # Service worker (monitoring logic)
-├── content.js             # Intervention UI + voice playback
-├── popup.html/js          # Settings UI
-├── styles.css             # Beautiful gradient design
-├── assets/
-│   ├── voices/            # 10 pre-generated voice files
-│   │   ├── mom_*.mp3
-│   │   ├── idol_*.mp3
-│   │   ├── coach_*.mp3
-│   │   └── churchill_*.mp3  # 🇬🇧 Special!
-│   └── images/
-│       └── Winston-Churchill.webp  # PM's photo
-└── clerk-config.js        # Auth configuration
+extension/                    # Chrome Extension (Existing)
+├── manifest.json
+├── background.js
+├── content.js
+└── popup.html/js
+
+desktop/                      # Desktop App (NEW)
+├── electron/
+│   ├── main.js               # Electron main process
+│   └── app-monitor.js        # active-win integration
+└── renderer/                 # React UI
+    └── src/
+
+mobile/                        # Mobile App (NEW)
+├── ios/                      # iOS native code
+├── android/                  # Android native code
+└── src/                      # React Native/Flutter
+
+tour/                         # Virtual Tour (NEW)
+├── anam-config.json
+└── assets/
 ```
 
-### Backend (Node.js + Express)
+### Backend (Node.js + Express - Extended)
 
 ```
 backend/
@@ -469,22 +534,34 @@ backend/
 ├── daily-report-service.js     # Report generation
 ├── email-service.js            # Email delivery
 ├── elevenlabs-integration.js   # Voice generation
-└── generate-churchill-voices.js # Churchill voice generator
+├── stripe-service.js           # Stripe payment integration (NEW)
+├── uber-service.js             # UberEats API integration (NEW)
+├── app-monitor-service.js     # Multi-platform app tracking (NEW)
+├── tour-service.js             # Virtual tour management (NEW)
+└── models/                     # Database models (NEW)
+    ├── User.js
+    ├── Transaction.js
+    └── AppUsage.js
 ```
 
-### Tech Stack
+### Tech Stack (Extended)
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| **Extension** | JavaScript ES6+ | Chrome Extension logic |
-| **UI** | HTML5 + CSS3 | Beautiful intervention overlays |
+| **Chrome Extension** | JavaScript ES6+ | Browser monitoring |
+| **Desktop App** | Electron + React | Desktop app monitoring (active-win) |
+| **Mobile App** | React Native/Flutter | Mobile app monitoring (Screen Time API) |
+| **UI** | HTML5 + CSS3 + React | Beautiful intervention overlays |
 | **Backend** | Node.js + Express | API server |
+| **Database** | PostgreSQL/MongoDB | User data, transactions, app usage |
 | **LLM** | Groq (Llama 3.3 70B) | Dynamic message generation |
 | **Voice AI** | ElevenLabs | Authentic voice synthesis |
+| **Payment** | Stripe API | Financial transactions |
+| **Food Delivery** | UberEats API | Reward system |
 | **Email** | nodemailer + Gmail | Report delivery |
 | **Automation** | n8n | Workflow orchestration |
-| **Auth** | Clerk (Demo) | User management |
-| **Storage** | Chrome Storage API | User preferences |
+| **Virtual Tour** | Anam Platform | Interactive onboarding |
+| **Storage** | Chrome Storage API + Database | User preferences & data |
 
 ---
 
