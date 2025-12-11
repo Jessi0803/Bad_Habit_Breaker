@@ -390,14 +390,12 @@ POST /api/send-email-report
 
 ## 🏗️ Technical Architecture
 
-### System Architecture (Extended - Multi-Platform)
+### System Architecture (Desktop App)
 
 ```mermaid
 graph TB
-    subgraph "👤 Client Applications"
-        CE[🌐 Chrome Extension<br/>Browser Monitoring]
-        DA[🖥️ Desktop App<br/>Electron + active-win]
-        MA[📱 Mobile App<br/>React Native]
+    subgraph "👤 Client Application"
+        DA[🖥️ Desktop App<br/>Electron + active-win<br/>Monitor All Desktop Apps]
     end
     
     subgraph "⚙️ Backend Server"
@@ -419,9 +417,7 @@ graph TB
         Gmail[📧 Gmail SMTP<br/>Email Delivery]
     end
     
-    CE --> Backend
     DA --> Backend
-    MA --> Backend
     
     Backend --> LLM
     Backend --> TTS
@@ -434,9 +430,7 @@ graph TB
     n8n --> Backend
     Email --> Gmail
     
-    style CE fill:#667eea,color:#fff
     style DA fill:#8b5cf6,color:#fff
-    style MA fill:#10b981,color:#fff
     style Backend fill:#764ba2,color:#fff
     style LLM fill:#10b981,color:#fff
     style TTS fill:#f59e0b,color:#fff
@@ -449,12 +443,12 @@ graph TB
     style Email fill:#dc2626,color:#fff
 ```
 
-### Data Flow Sequence (Extended - Financial Incentive System)
+### Data Flow Sequence (Desktop App - Financial Incentive System)
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Client as Client App
+    participant Desktop as Desktop App
     participant Backend as Backend API
     participant Groq as Groq LLM
     participant EL as ElevenLabs
@@ -465,15 +459,16 @@ sequenceDiagram
     participant Gmail as Gmail SMTP
     
     Note over User,Gmail: 1. Setup - Financial Commitment
-    User->>Client: Open App
-    Client->>Backend: Register + Payment
+    User->>Desktop: Open Desktop App
+    Desktop->>Backend: Register + Payment
     Backend->>Stripe: Create Payment Intent
     Stripe-->>Backend: Payment Confirmed
     Backend->>DB: Store Deposit
-    Backend-->>Client: Account Activated
+    Backend-->>Desktop: Account Activated
     
-    Note over Client,DB: 2. Monitoring - Penalty System
-    Client->>Backend: Report App Usage
+    Note over Desktop,DB: 2. Monitoring - Penalty System
+    Desktop->>Desktop: Monitor All Apps<br/>(active-win)
+    Desktop->>Backend: Report App Usage
     alt Distraction Detected
         Backend->>Stripe: Charge Penalty
         Backend->>Groq: Generate Message
@@ -481,15 +476,15 @@ sequenceDiagram
         Backend->>EL: Text-to-Speech
         EL-->>Backend: Audio
         Backend->>DB: Log Intervention
-        Backend-->>Client: Warning + Voice
+        Backend-->>Desktop: Warning + Voice
     end
     
-    Note over Client,DB: 3. Reward - UberEats
+    Note over Desktop,DB: 3. Reward - UberEats
     Backend->>DB: Check Daily Goal
     alt Goal Achieved
         Backend->>Uber: Create Order
         Backend->>DB: Update Balance
-        Backend-->>Client: 🎉 Reward Notification
+        Backend-->>Desktop: 🎉 Reward Notification
     end
     
     Note over n8n,Gmail: 4. Daily Report Automation
