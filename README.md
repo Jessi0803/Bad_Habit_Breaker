@@ -360,49 +360,84 @@ POST /api/send-email-report
 
 ## 🏗️ Technical Architecture
 
-### Simplified Architecture (with Tools)
+### System Architecture
 
 ```mermaid
-graph LR
-    User((User)) --> Ext[Chrome Extension<br/>Manifest V3]
-    Ext --> BG[background.js<br/>Monitoring<br/>chrome.alarms/storage]
-    Ext --> CS[content.js<br/>Overlay + Audio]
-    Ext --> POP[popup.js<br/>Settings]
-    BG --> API[Node.js Backend<br/>Express @3000]
-    API --> Groq[Groq LLM<br/>Llama 3.3 70B]
-    API --> EL[ElevenLabs TTS<br/>Real-time audio]
-    API --> Mail[Gmail SMTP<br/>nodemailer]
-    API --> n8n[n8n workflow<br/>(daily reports)]
-    BG --> Store[Chrome Storage<br/>Local + Sync]
-    POP --> Store
-    API --> Store
-    API -->|JSON+Base64| CS
+graph TB
+    subgraph "🌐 User Browser"
+        User[User Browsing] --> Ext[Chrome Extension<br/>Manifest V3]
+    end
+    
+    subgraph "🔌 Extension Layer"
+        Ext --> BG[background.js<br/>Service Worker]
+        Ext --> CS[content.js<br/>Content Script]
+        Ext --> POP[popup.js<br/>Settings UI]
+        BG -->|Monitor| Track[Behavior Tracking<br/>chrome.alarms<br/>chrome.storage.local]
+    end
+    
+    subgraph "⚙️ Backend Server"
+        BG -->|API Request| API[Node.js + Express<br/>Port 3000]
+        API --> LLM[llm-service-groq.js]
+        API --> TTS[elevenlabs-integration.js]
+        API --> Report[daily-report-service.js]
+        API --> Email[email-service.js]
+    end
+    
+    subgraph "🤝 Partner Technologies"
+        LLM --> Groq[🧠 Groq LLM<br/>Llama 3.3 70B]
+        TTS --> EL[🎙️ ElevenLabs<br/>TTS API]
+        Email --> Gmail[📧 Gmail SMTP<br/>nodemailer]
+        Report --> n8n[🔄 n8n<br/>Workflow]
+    end
+    
+    subgraph "💾 Storage"
+        Track --> Storage[Chrome Storage<br/>Local + Sync]
+        POP --> Storage
+    end
+    
+    API -->|Response| CS
+    CS -->|Display| User
+    
+    style User fill:#e1f5ff
+    style Ext fill:#667eea,color:#fff
+    style API fill:#764ba2,color:#fff
+    style Groq fill:#10b981,color:#fff
+    style EL fill:#f59e0b,color:#fff
+    style Gmail fill:#ef4444,color:#fff
+    style n8n fill:#8b5cf6,color:#fff
+    style Storage fill:#fbbf24,color:#000
 ```
 
-### Simplified Data Flow
+### Data Flow Sequence
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant Ext as Extension
-    participant API as Backend
-    participant Groq as Groq LLM
-    participant EL as ElevenLabs TTS
-    participant Mail as Gmail SMTP
-    User->>Ext: Browse (e.g., Instagram)
-    Ext->>Ext: Track time (chrome.alarms/storage)
-    Ext->>Ext: Threshold check
-    alt Exceeded
-        Ext->>API: POST /api/generate-intervention\n{site, timeSpent, todayTotalTime, voiceType}
-        API->>Groq: Generate message
-        Groq-->>API: AI text
-        API->>EL: TTS (real-time)
-        EL-->>API: Base64 audio
-        API-->>Ext: {message, audioBase64, severity}
-        Ext->>User: Show overlay + Play audio
-        Ext->>Ext: Update tracking
+    participant U as User
+    participant BG as background.js
+    participant API as Backend API
+    participant G as Groq LLM
+    participant E as ElevenLabs
+    participant CS as content.js
+    participant S as Chrome Storage
+    
+    U->>BG: Browse Instagram
+    BG->>BG: Monitor (chrome.alarms)
+    BG->>S: Track cumulative time
+    BG->>BG: Check threshold (10s)
+    
+    alt Threshold Exceeded
+        BG->>API: POST /api/generate-intervention<br/>{site, timeSpent, todayTotalTime, voiceType}
+        API->>G: Generate message<br/>(Context-aware)
+        G-->>API: AI text
+        API->>E: Text-to-Speech<br/>(Real-time)
+        E-->>API: Base64 audio
+        API-->>BG: {message, audioBase64}
+        BG->>CS: Display overlay
+        CS->>U: Show intervention + Play voice
+        BG->>S: Update daily tracking
     end
-    Note over API,Mail: n8n triggers daily report → email via nodemailer
+    
+    Note over API,S: Daily: n8n → Report → Gmail
 ```
 
 ### Frontend (Chrome Extension)
