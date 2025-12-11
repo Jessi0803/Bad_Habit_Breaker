@@ -2,7 +2,7 @@
 
 **An AI-powered Chrome extension that monitors your browsing habits and intervenes when you're getting distracted — with real human voices.**
 
-Built for **ElevenLabs AI Hackathon** | **December 2024**
+Built for **ElevenLabs AI Hackathon** | **December 2025**
 
 ---
 
@@ -47,6 +47,9 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
 4. **🎨 Full-Screen Interventions | 全螢幕干預** `✅ 100%`
    - HTML5 + CSS3 beautiful UI
    - Blur effects and animations
+   - Bilingual display (English/Chinese)
+   - Cumulative time display with red highlighting
+   - Churchill special UI with historical photos
 
 
 5. **⚙️ User Settings | 用戶設定** `✅ 100%`
@@ -144,8 +147,8 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
 - 📝 Lines of Code: `~5,500+` (增加累計時間追蹤功能)
 - 🗣️ Voice Files: `10` (630 KB) + Real-time TTS
 - 🖼️ Images: `2` (Churchill photos)
-- 📡 API Endpoints: `7`
-- 📚 Documentation: `8` guides
+- 📡 API Endpoints: `8`
+- 📚 Documentation: `4` guides (README.md, TEAM_SETUP.md, N8N_DAILY_REPORT.md, EMAIL_SETUP.md)
 - 🔧 Functions: `30+` (including tracking logic)
 
 **Features:**
@@ -160,7 +163,7 @@ Habit Breaker is an intelligent Chrome extension that helps users stay focused b
 - 👥 Team Size: `4` members
 - ⏱️ Time Spent: `~40` hours
 - 🏆 Target Score: `24.5-25/25`
-- 📅 Hackathon: ElevenLabs AI (Dec 2024)
+- 📅 Hackathon: ElevenLabs AI (Dec 2025)
 
 ---
 
@@ -402,6 +405,28 @@ backend/
 | **Automation** | n8n | Workflow orchestration |
 | **Auth** | Clerk (Demo) | User management |
 | **Storage** | Chrome Storage API | User preferences |
+
+---
+
+## 🔄 Technical Implementation Flow
+
+This project is a Chrome extension based on Manifest V3:
+
+• **Service Worker Monitoring (background.js)** monitors user dwell time and cumulative usage on specific websites through `chrome.alarms` and `chrome.storage.local`
+
+• **Threshold Detection** - Once the preset threshold is exceeded, it sends an API request to the local Node.js backend containing user behavior context (including current session duration, today's cumulative time, visit count, and timestamp)
+
+• **LLM Text Generation** - After receiving the request, the backend first calls Groq's Large Language Model (LLM) API to dynamically generate personalized intervention text targeting the user's behavior patterns
+
+• **Real-time Voice Synthesis** - Then immediately passes the text to ElevenLabs' Text-to-Speech (TTS) API for real-time voice synthesis
+
+• **Response Delivery** - Finally returns the generated text and Base64-encoded audio stream to the extension
+
+• **UI Injection & Playback** - The extension's content script (content.js) receives the data and injects a DOM overlay containing bilingual messages and cumulative time statistics into the page, playing the audio through the Web Audio API
+
+• **Daily Reporting** - Additionally, the system integrates a daily reporting feature: the backend aggregates user cumulative time data and sends HTML-formatted daily reports to the user's email via nodemailer
+
+• **Workflow Automation** - The entire process can be scheduled through n8n automation workflows
 
 ---
 
