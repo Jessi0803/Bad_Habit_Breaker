@@ -402,14 +402,21 @@ graph TB
     
     subgraph "⚙️ Backend Server"
         Backend[Node.js + Express<br/>Port 3000]
+        Report[📊 Daily Report Service]
+        Email[📧 Email Service<br/>nodemailer]
     end
     
     subgraph "🤝 AI & Services"
-        LLM[🧠 Groq LLM]
-        TTS[🎙️ ElevenLabs]
-        Stripe[💳 Stripe]
-        Uber[🍔 UberEats]
-        DB[(💾 Database)]
+        LLM[🧠 Groq LLM<br/>Llama 3.3 70B]
+        TTS[🎙️ ElevenLabs<br/>TTS API]
+        Stripe[💳 Stripe<br/>Payment Processing]
+        Uber[🍔 UberEats<br/>Reward Orders]
+        DB[(💾 Database<br/>PostgreSQL/MongoDB)]
+    end
+    
+    subgraph "🔄 Automation & Delivery"
+        n8n[🔄 n8n Workflow<br/>Scheduled Reports]
+        Gmail[📧 Gmail SMTP<br/>Email Delivery]
     end
     
     CE --> Backend
@@ -421,6 +428,11 @@ graph TB
     Backend --> Stripe
     Backend --> Uber
     Backend --> DB
+    Backend --> Report
+    Report --> Email
+    
+    n8n --> Backend
+    Email --> Gmail
     
     style CE fill:#667eea,color:#fff
     style DA fill:#8b5cf6,color:#fff
@@ -431,6 +443,10 @@ graph TB
     style Stripe fill:#635bff,color:#fff
     style Uber fill:#000,color:#fff
     style DB fill:#fbbf24,color:#000
+    style n8n fill:#8b5cf6,color:#fff
+    style Gmail fill:#ef4444,color:#fff
+    style Report fill:#9333ea,color:#fff
+    style Email fill:#dc2626,color:#fff
 ```
 
 ### Data Flow Sequence (Extended - Financial Incentive System)
@@ -440,29 +456,47 @@ sequenceDiagram
     participant User
     participant Client as Client App
     participant Backend as Backend API
-    participant Services as AI & Services
+    participant Groq as Groq LLM
+    participant EL as ElevenLabs
+    participant Stripe as Stripe
+    participant Uber as UberEats
+    participant DB as Database
+    participant n8n as n8n
+    participant Gmail as Gmail SMTP
     
-    Note over User,Services: 1. Setup - Financial Commitment
+    Note over User,Gmail: 1. Setup - Financial Commitment
     User->>Client: Open App
     Client->>Backend: Register + Payment
-    Backend->>Services: Stripe Payment
-    Services-->>Backend: Payment Confirmed
+    Backend->>Stripe: Create Payment Intent
+    Stripe-->>Backend: Payment Confirmed
+    Backend->>DB: Store Deposit
     Backend-->>Client: Account Activated
     
-    Note over Client,Services: 2. Monitoring - Penalty System
+    Note over Client,DB: 2. Monitoring - Penalty System
     Client->>Backend: Report App Usage
     alt Distraction Detected
-        Backend->>Services: Charge Penalty (Stripe)
-        Backend->>Services: Generate Message (Groq + ElevenLabs)
+        Backend->>Stripe: Charge Penalty
+        Backend->>Groq: Generate Message
+        Groq-->>Backend: AI Text
+        Backend->>EL: Text-to-Speech
+        EL-->>Backend: Audio
+        Backend->>DB: Log Intervention
         Backend-->>Client: Warning + Voice
     end
     
-    Note over Client,Services: 3. Reward - UberEats
-    Backend->>Services: Check Daily Goal
+    Note over Client,DB: 3. Reward - UberEats
+    Backend->>DB: Check Daily Goal
     alt Goal Achieved
-        Backend->>Services: Create Order (UberEats)
+        Backend->>Uber: Create Order
+        Backend->>DB: Update Balance
         Backend-->>Client: 🎉 Reward Notification
     end
+    
+    Note over n8n,Gmail: 4. Daily Report Automation
+    n8n->>Backend: Trigger Daily Report (8 PM)
+    Backend->>DB: Generate Report Data
+    Backend->>Gmail: Send Email Report
+    Gmail-->>User: Daily Report Email
 ```
 
 ### Frontend (Multi-Platform)
