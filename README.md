@@ -390,106 +390,82 @@ POST /api/send-email-report
 
 ## 🏗️ Technical Architecture
 
-### System Architecture (Desktop App)
+### System Architecture
 
 ```mermaid
 graph TB
-    subgraph "👤 Client Application"
-        DA[🖥️ Desktop App<br/>Electron + active-win<br/>Monitor All Desktop Apps]
+    subgraph "🌐 Browser"
+        User[User Browsing] --> Ext[Chrome Extension]
+    end
+    
+    subgraph "🔌 Extension Components"
+        Ext --> BG[background.js<br/>Monitor Activity]
+        Ext --> CS[content.js<br/>Show Intervention]
+        Ext --> POP[popup.html<br/>Settings]
+        BG --> Storage[Chrome Storage<br/>Save Data]
     end
     
     subgraph "⚙️ Backend Server"
-        Backend[Node.js + Express<br/>Port 3000]
-        Report[📊 Daily Report Service]
-        Email[📧 Email Service<br/>nodemailer]
+        BG --> API[Node.js + Express<br/>Port 3000]
+        API --> LLM[Groq LLM<br/>Generate Message]
+        API --> TTS[ElevenLabs<br/>Create Voice]
+        API --> Report[Daily Report<br/>Generate Stats]
+        API --> Email[Email Service<br/>Send Report]
     end
     
-    subgraph "🤝 AI & Services"
-        LLM[🧠 Groq LLM<br/>Llama 3.3 70B]
-        TTS[🎙️ ElevenLabs<br/>TTS API]
-        Stripe[💳 Stripe<br/>Payment Processing]
-        Uber[🍔 UberEats<br/>Reward Orders]
-        DB[(💾 Database<br/>PostgreSQL/MongoDB)]
+    subgraph "🔄 Automation"
+        n8n[n8n Workflow<br/>8 PM Daily] --> API
     end
     
-    subgraph "🔄 Automation & Delivery"
-        n8n[🔄 n8n Workflow<br/>Scheduled Reports]
-        Gmail[📧 Gmail SMTP<br/>Email Delivery]
+    subgraph "📧 Delivery"
+        Email --> Gmail[Gmail SMTP<br/>Send Email]
     end
     
-    DA --> Backend
+    LLM --> API
+    TTS --> API
+    API --> CS
+    CS --> User
     
-    Backend --> LLM
-    Backend --> TTS
-    Backend --> Stripe
-    Backend --> Uber
-    Backend --> DB
-    Backend --> Report
-    Report --> Email
-    
-    n8n --> Backend
-    Email --> Gmail
-    
-    style DA fill:#8b5cf6,color:#fff
-    style Backend fill:#764ba2,color:#fff
+    style User fill:#e1f5ff
+    style Ext fill:#667eea,color:#fff
+    style API fill:#764ba2,color:#fff
     style LLM fill:#10b981,color:#fff
     style TTS fill:#f59e0b,color:#fff
-    style Stripe fill:#635bff,color:#fff
-    style Uber fill:#000,color:#fff
-    style DB fill:#fbbf24,color:#000
     style n8n fill:#8b5cf6,color:#fff
     style Gmail fill:#ef4444,color:#fff
-    style Report fill:#9333ea,color:#fff
-    style Email fill:#dc2626,color:#fff
+    style Storage fill:#fbbf24,color:#000
 ```
 
-### Data Flow Sequence (Desktop App - Financial Incentive System)
+### Data Flow Sequence
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Desktop as Desktop App
+    participant Ext as Chrome Extension
     participant Backend as Backend API
     participant Groq as Groq LLM
     participant EL as ElevenLabs
-    participant Stripe as Stripe
-    participant Uber as UberEats
-    participant DB as Database
+    participant Storage as Chrome Storage
     participant n8n as n8n
-    participant Gmail as Gmail SMTP
+    participant Gmail as Gmail
     
-    Note over User,Gmail: 1. Setup - Financial Commitment
-    User->>Desktop: Open Desktop App
-    Desktop->>Backend: Register + Payment
-    Backend->>Stripe: Create Payment Intent
-    Stripe-->>Backend: Payment Confirmed
-    Backend->>DB: Store Deposit
-    Backend-->>Desktop: Account Activated
+    Note over User,Gmail: 1. User Browsing
+    User->>Ext: Visit Instagram/Facebook
+    Ext->>Ext: Monitor Time (background.js)
+    Ext->>Storage: Track Daily Time
     
-    Note over Desktop,DB: 2. Monitoring - Penalty System
-    Desktop->>Desktop: Monitor All Apps<br/>(active-win)
-    Desktop->>Backend: Report App Usage
-    alt Distraction Detected
-        Backend->>Stripe: Charge Penalty
-        Backend->>Groq: Generate Message
-        Groq-->>Backend: AI Text
-        Backend->>EL: Text-to-Speech
-        EL-->>Backend: Audio
-        Backend->>DB: Log Intervention
-        Backend-->>Desktop: Warning + Voice
-    end
+    Note over Ext,EL: 2. Intervention Triggered
+    Ext->>Backend: POST /api/generate-intervention<br/>{site, timeSpent, todayTotalTime}
+    Backend->>Groq: Generate Message
+    Groq-->>Backend: AI Text
+    Backend->>EL: Text-to-Speech
+    EL-->>Backend: Audio (Base64)
+    Backend-->>Ext: {message, audio}
+    Ext->>User: Show Overlay + Play Voice
     
-    Note over Desktop,DB: 3. Reward - UberEats
-    Backend->>DB: Check Daily Goal
-    alt Goal Achieved
-        Backend->>Uber: Create Order
-        Backend->>DB: Update Balance
-        Backend-->>Desktop: 🎉 Reward Notification
-    end
-    
-    Note over n8n,Gmail: 4. Daily Report Automation
-    n8n->>Backend: Trigger Daily Report (8 PM)
-    Backend->>DB: Generate Report Data
+    Note over n8n,Gmail: 3. Daily Report (8 PM)
+    n8n->>Backend: Trigger Daily Report
+    Backend->>Storage: Get Daily Stats
     Backend->>Gmail: Send Email Report
     Gmail-->>User: Daily Report Email
 ```
