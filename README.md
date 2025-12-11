@@ -360,6 +360,260 @@ POST /api/send-email-report
 
 ## 🏗️ Technical Architecture
 
+### System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "🌐 User Browser"
+        A[User Browsing<br/>Instagram/Facebook/YouTube] -->|Monitors Activity| B[Chrome Extension<br/>Manifest V3]
+        B --> C[background.js<br/>Service Worker]
+        B --> D[content.js<br/>Content Script]
+        B --> E[popup.html/js<br/>Settings UI]
+    end
+    
+    subgraph "🔌 Chrome Extension Layer"
+        C -->|chrome.alarms<br/>chrome.storage.local| F[Behavior Tracking<br/>Cumulative Time]
+        F -->|Threshold Exceeded| G[API Request]
+        G -->|POST /api/generate-intervention| H[Node.js Backend<br/>Express Server]
+        D -->|Display UI| I[Intervention Overlay<br/>HTML5 + CSS3]
+        D -->|Play Audio| J[Web Audio API<br/>Base64 Audio]
+        E -->|User Settings| K[Chrome Storage API<br/>Sync & Local]
+    end
+    
+    subgraph "⚙️ Backend Server (Node.js + Express)"
+        H --> L[server.js<br/>API Router<br/>Port 3000]
+        L --> M[llm-service-groq.js<br/>LLM Integration]
+        L --> N[elevenlabs-integration.js<br/>TTS Integration]
+        L --> O[daily-report-service.js<br/>Report Generation]
+        L --> P[email-service.js<br/>Email Delivery]
+    end
+    
+    subgraph "🤝 Partner Technologies"
+        M -->|Text Generation| Q[🧠 Groq LLM<br/>Llama 3.3 70B<br/>Free Tier]
+        N -->|Voice Synthesis| R[🎙️ ElevenLabs<br/>Text-to-Speech<br/>Creator Plan $22/mo]
+        P -->|Send Email| S[📧 Gmail SMTP<br/>nodemailer<br/>App Password]
+        O -->|Schedule Reports| T[🔄 n8n<br/>Workflow Automation<br/>Daily 8 PM]
+        E -->|User Auth| U[🔐 Clerk<br/>Authentication<br/>Demo Mode]
+    end
+    
+    subgraph "💾 Data Storage"
+        F -->|Store| V[Daily Time Tracking<br/>Per Site]
+        V -->|Persist| W[Chrome Storage Local<br/>Cross-Session]
+        K -->|Sync| X[Chrome Storage Sync<br/>User Preferences]
+        O -->|Generate| Y[Daily Reports<br/>HTML Format]
+    end
+    
+    subgraph "📊 Data Flow"
+        H -->|JSON Response| Z[Message + Audio Base64<br/>+ Severity Level]
+        Z --> D
+        D -->|Display| I
+        D -->|Play| J
+        V -->|LLM Context| M
+        Y -->|Email| S
+        Y -->|Schedule| T
+    end
+    
+    style A fill:#e1f5ff
+    style B fill:#667eea,color:#fff
+    style H fill:#764ba2,color:#fff
+    style Q fill:#10b981,color:#fff
+    style R fill:#f59e0b,color:#fff
+    style S fill:#ef4444,color:#fff
+    style T fill:#8b5cf6,color:#fff
+    style U fill:#3b82f6,color:#fff
+    style W fill:#fbbf24,color:#000
+    style X fill:#fbbf24,color:#000
+```
+
+### Data Flow Sequence
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Extension as Chrome Extension<br/>Manifest V3
+    participant Backend as Node.js Backend<br/>Express
+    participant Groq as 🧠 Groq LLM<br/>Llama 3.3 70B
+    participant ElevenLabs as 🎙️ ElevenLabs<br/>TTS API
+    participant Storage as 💾 Chrome Storage<br/>Local & Sync
+    participant Gmail as 📧 Gmail SMTP<br/>nodemailer
+    participant n8n as 🔄 n8n<br/>Workflow
+    
+    User->>Extension: Browsing Instagram/Facebook
+    Extension->>Extension: Monitor (chrome.alarms)<br/>Every 1 second
+    Extension->>Storage: Track cumulative time<br/>chrome.storage.local
+    Extension->>Extension: Check threshold<br/>(10s default, adjustable)
+    
+    alt Threshold Exceeded
+        Extension->>Backend: POST /api/generate-intervention<br/>{site, timeSpent, todayTotalTime,<br/>visitCount, voiceType, useDynamicVoice}
+        Backend->>Groq: Generate personalized message<br/>Context: cumulative time, visit count<br/>Personality: Mom/Idol/Coach/Churchill
+        Groq-->>Backend: AI-generated text<br/>Adaptive severity (low/medium/high)
+        Backend->>ElevenLabs: Text-to-Speech<br/>Real-time TTS<br/>Base64 audio generation
+        ElevenLabs-->>Backend: Base64 audio stream<br/>MP3 format
+        Backend-->>Extension: {message, audioBase64,<br/>severity, usedDynamicVoice}
+        Extension->>Extension: Inject overlay (content.js)<br/>Bilingual UI (EN/中文)
+        Extension->>User: Display intervention<br/>+ Play voice (Web Audio API)
+        Extension->>Storage: Update daily tracking<br/>Add session time
+    end
+    
+    Note over Extension,Storage: Daily reset at midnight<br/>Automatic cleanup
+    
+    Note over Backend,ElevenLabs: Dynamic voice generation<br/>matches LLM text perfectly
+    
+    rect rgb(240, 248, 255)
+        Note over Backend,n8n: Daily Report Automation (8 PM)
+        n8n->>Backend: Trigger /api/daily-report
+        Backend->>Storage: Aggregate daily data
+        Backend->>Groq: Generate insights & advice
+        Groq-->>Backend: Smart recommendations
+        Backend->>Backend: Format HTML report
+        Backend->>Gmail: Send email report<br/>HTML + plain text
+        Gmail-->>User: Daily productivity report
+    end
+```
+
+### Component Architecture
+
+```mermaid
+graph TB
+    subgraph "🔌 Frontend Layer - Chrome Extension"
+        A1[background.js<br/>Service Worker] --> A2[Tab Monitoring<br/>chrome.tabs API]
+        A1 --> A3[Cumulative Time Tracking<br/>chrome.storage.local]
+        A1 --> A4[API Client<br/>fetch API]
+        B1[content.js<br/>Content Script] --> B2[UI Injection<br/>DOM Overlay]
+        B1 --> B3[Audio Playback<br/>Web Audio API]
+        B1 --> B4[User Interaction<br/>Buttons & Events]
+        C1[popup.js<br/>Settings UI] --> C2[Voice Selection<br/>4 Personalities]
+        C1 --> C3[Sensitivity Control<br/>Low/Medium/High]
+        C1 --> C4[User Preferences<br/>Chrome Storage Sync]
+    end
+    
+    subgraph "⚙️ Backend Layer - Node.js + Express"
+        D1[server.js<br/>Express Server] --> D2[API Router<br/>8 Endpoints]
+        D2 --> D3[/api/generate-intervention<br/>LLM + TTS]
+        D2 --> D4[/api/daily-report<br/>Report Generation]
+        D2 --> D5[/api/send-email-report<br/>Email Delivery]
+        D2 --> D6[/api/should-intervene<br/>Smart Decision]
+        D2 --> D7[/api/stats<br/>Statistics]
+        D2 --> D8[/api/health<br/>Health Check]
+        D3 --> E1[llm-service-groq.js<br/>LLM Integration]
+        D3 --> E2[elevenlabs-integration.js<br/>TTS Integration]
+        D4 --> E3[daily-report-service.js<br/>Report Service]
+        D5 --> E4[email-service.js<br/>Email Service]
+    end
+    
+    subgraph "🤝 Partner Technologies & Tools"
+        E1 --> F1[🧠 Groq LLM<br/>Llama 3.3 70B<br/>Free Tier<br/>Fast Inference]
+        E2 --> F2[🎙️ ElevenLabs<br/>Text-to-Speech<br/>Creator Plan<br/>Real-time TTS]
+        E4 --> F3[📧 Gmail SMTP<br/>nodemailer<br/>App Password<br/>HTML Reports]
+        E3 --> F4[🔄 n8n<br/>Workflow Automation<br/>Scheduled Reports<br/>Daily 8 PM]
+        C4 --> F5[🔐 Clerk<br/>Authentication<br/>Demo Mode<br/>User Management]
+        A3 --> F6[💾 Chrome Storage<br/>Local & Sync<br/>Daily Tracking<br/>User Preferences]
+    end
+    
+    subgraph "📊 Data & Storage"
+        A3 --> G1[Daily Time Tracking<br/>Per Site<br/>Cross-Session]
+        C4 --> G2[User Settings<br/>Voice Type<br/>Sensitivity]
+        E3 --> G3[Daily Reports<br/>HTML Format<br/>Statistics]
+        G1 --> F6
+        G2 --> F6
+    end
+    
+    A4 --> D3
+    B2 --> A1
+    C1 --> A1
+    D3 --> E1
+    D3 --> E2
+    D4 --> E3
+    D5 --> E4
+    E3 --> F4
+    
+    style A1 fill:#667eea,color:#fff
+    style B1 fill:#667eea,color:#fff
+    style C1 fill:#667eea,color:#fff
+    style D1 fill:#764ba2,color:#fff
+    style F1 fill:#10b981,color:#fff
+    style F2 fill:#f59e0b,color:#fff
+    style F3 fill:#ef4444,color:#fff
+    style F4 fill:#8b5cf6,color:#fff
+    style F5 fill:#3b82f6,color:#fff
+    style F6 fill:#fbbf24,color:#000
+```
+
+### Technology Stack Overview
+
+```mermaid
+mindmap
+  root((Habit Breaker))
+    Frontend
+      Chrome Extension
+        Manifest V3
+        Service Worker
+        Content Scripts
+        Chrome APIs
+          chrome.alarms
+          chrome.storage
+          chrome.tabs
+          chrome.scripting
+      UI Technologies
+        HTML5
+        CSS3
+        JavaScript ES6+
+        Web Audio API
+    Backend
+      Node.js
+        Express Server
+        REST API
+        Port 3000
+      Services
+        LLM Service
+        TTS Service
+        Email Service
+        Report Service
+    Partner Technologies
+      Groq LLM
+        Llama 3.3 70B
+        Free Tier
+        Fast Inference
+      ElevenLabs
+        Text-to-Speech
+        Creator Plan
+        Real-time TTS
+        British Accents
+      n8n
+        Workflow Automation
+        Scheduled Reports
+        Daily 8 PM
+      Clerk
+        Authentication
+        Demo Mode
+        User Management
+    Data Storage
+      Chrome Storage
+        Local Storage
+        Sync Storage
+        Daily Tracking
+        User Preferences
+    Communication
+      Gmail SMTP
+        nodemailer
+        App Password
+        HTML Reports
+      REST API
+        JSON Format
+        Base64 Audio
+    Features
+      Voice Personalities
+        Mom
+        Idol
+        Coach
+        Churchill
+      Smart Features
+        Cumulative Tracking
+        Adaptive Severity
+        Bilingual UI
+        Dynamic Voice
+```
+
 ### Frontend (Chrome Extension)
 
 ```
