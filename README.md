@@ -394,57 +394,43 @@ POST /api/send-email-report
 
 ```mermaid
 graph TB
-    subgraph "👤 User Devices"
-        CE[🌐 Chrome Extension<br/>Browser Monitoring]
-        DA[🖥️ Desktop App<br/>Electron + active-win]
-        MA[📱 Mobile App<br/>React Native/Flutter]
+    subgraph "👤 Client Applications"
+        CE[🌐 Chrome Extension]
+        DA[🖥️ Desktop App<br/>Electron]
+        MA[📱 Mobile App<br/>React Native]
     end
     
-    subgraph "🔌 Client Layer"
-        CE --> API1[Extension API<br/>Chrome APIs]
-        DA --> API2[Desktop API<br/>active-win + Electron IPC]
-        MA --> API3[Mobile API<br/>Screen Time + Usage Stats]
+    subgraph "⚙️ Backend Server"
+        Backend[Node.js + Express<br/>Port 3000]
     end
     
-    subgraph "⚙️ Backend Server (Node.js + Express)"
-        API1 --> Backend[Backend API<br/>Port 3000]
-        API2 --> Backend
-        API3 --> Backend
-        
-        Backend --> LLM[🧠 Groq LLM<br/>Message Generation]
-        Backend --> TTS[🎙️ ElevenLabs<br/>Voice Synthesis]
-        Backend --> DB[(💾 Database<br/>PostgreSQL/MongoDB)]
-        Backend --> Stripe[💳 Stripe API<br/>Payment Processing]
-        Backend --> Uber[🍔 UberEats API<br/>Reward Orders]
+    subgraph "🤝 AI & Services"
+        LLM[🧠 Groq LLM]
+        TTS[🎙️ ElevenLabs]
+        Stripe[💳 Stripe]
+        Uber[🍔 UberEats]
+        DB[(💾 Database)]
     end
     
-    subgraph "📊 Services & Integrations"
-        Stripe --> Payment[Payment Gateway<br/>Deposits & Penalties]
-        Uber --> Delivery[Food Delivery<br/>Reward System]
-        DB --> Report[📧 Email Reports<br/>n8n + Gmail]
-        DB --> Tour[🎬 Virtual Tour<br/>Anam Platform]
-    end
+    CE --> Backend
+    DA --> Backend
+    MA --> Backend
     
-    subgraph "💾 Data Storage"
-        DB --> UserData[(User Profiles<br/>Settings & History)]
-        DB --> Financial[(Financial Records<br/>Deposits & Penalties)]
-        DB --> AppTracking[(App Usage Data<br/>Time & Patterns)]
-    end
-    
-    Backend -->|Response| API1
-    Backend -->|Response| API2
-    Backend -->|Response| API3
+    Backend --> LLM
+    Backend --> TTS
+    Backend --> Stripe
+    Backend --> Uber
+    Backend --> DB
     
     style CE fill:#667eea,color:#fff
     style DA fill:#8b5cf6,color:#fff
     style MA fill:#10b981,color:#fff
     style Backend fill:#764ba2,color:#fff
+    style LLM fill:#10b981,color:#fff
+    style TTS fill:#f59e0b,color:#fff
     style Stripe fill:#635bff,color:#fff
     style Uber fill:#000,color:#fff
     style DB fill:#fbbf24,color:#000
-    style Groq fill:#10b981,color:#fff
-    style EL fill:#f59e0b,color:#fff
-    style Tour fill:#8b5cf6,color:#fff
 ```
 
 ### Data Flow Sequence (Extended - Financial Incentive System)
@@ -452,51 +438,31 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant User
-    participant Client as Desktop/Mobile/Extension
+    participant Client as Client App
     participant Backend as Backend API
-    participant Stripe as Stripe API
-    participant DB as Database
-    participant Groq as Groq LLM
-    participant EL as ElevenLabs
-    participant Uber as UberEats API
+    participant Services as AI & Services
     
-    Note over User,Uber: Initial Setup - Financial Commitment
-    User->>Client: Open App (First Time)
-    Client->>Backend: POST /api/user/register
-    Backend->>Stripe: Create Payment Intent
-    Stripe-->>Backend: Payment Intent ID
-    Backend-->>Client: Show Payment Form
-    User->>Stripe: Enter Payment Details
-    Stripe-->>Backend: Payment Confirmed
-    Backend->>DB: Store Deposit Amount
+    Note over User,Services: 1. Setup - Financial Commitment
+    User->>Client: Open App
+    Client->>Backend: Register + Payment
+    Backend->>Services: Stripe Payment
+    Services-->>Backend: Payment Confirmed
     Backend-->>Client: Account Activated
     
-    Note over Client,DB: App Monitoring & Penalty System
-    Client->>Client: Monitor App Usage<br/>(All Apps - Desktop/Mobile/Browser)
-    Client->>Backend: POST /api/tracking/app-usage<br/>{appName, timeSpent, isDistracting}
-    
-    alt Distracting App Detected
-        Backend->>DB: Check Penalty Rules
-        Backend->>Stripe: Charge Penalty Fee
-        Stripe-->>Backend: Payment Processed
-        Backend->>DB: Deduct from Balance
-        Backend->>Groq: Generate Intervention Message
-        Groq-->>Backend: AI-generated Text
-        Backend->>EL: Text-to-Speech<br/>(Real-time)
-        EL-->>Backend: Base64 Audio
-        Backend-->>Client: Show Warning + Penalty Notice + Voice
+    Note over Client,Services: 2. Monitoring - Penalty System
+    Client->>Backend: Report App Usage
+    alt Distraction Detected
+        Backend->>Services: Charge Penalty (Stripe)
+        Backend->>Services: Generate Message (Groq + ElevenLabs)
+        Backend-->>Client: Warning + Voice
     end
     
-    Note over Client,DB: End of Day - Reward System
-    Backend->>DB: Calculate Daily Stats
-    alt No Distractions Today
-        Backend->>Uber: Create Order Request
-        Uber-->>Backend: Order Confirmed
-        Backend->>Stripe: Refund/Use Balance
-        Backend-->>Client: 🎉 Reward Notification + Order Details
+    Note over Client,Services: 3. Reward - UberEats
+    Backend->>Services: Check Daily Goal
+    alt Goal Achieved
+        Backend->>Services: Create Order (UberEats)
+        Backend-->>Client: 🎉 Reward Notification
     end
-    
-    Note over Backend,DB: Daily: n8n → Report → Gmail
 ```
 
 ### Frontend (Multi-Platform)
